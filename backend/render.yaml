@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: linkedin-manager-backend
+    env: node
+    region: ohio       # us-east-ohio — menor latencia para Argentina
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx playwright install chromium --with-deps
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: /opt/render/project/src/backend/data/linkedin_manager.db
+      - key: HEADLESS
+        value: "true"
+      - key: FRONTEND_URL
+        generateValue: false
+        # Completar con la URL de Netlify después del deploy
+        value: https://tu-app.netlify.app

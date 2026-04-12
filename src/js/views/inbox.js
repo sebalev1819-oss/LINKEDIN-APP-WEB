@@ -6,7 +6,7 @@ let state = { filter: 'all', activeThreadId: null, threads: [], templates: [] };
 function threadItem(t) {
   return `
     <button class="thread-item ${t.unread ? 'unread' : ''} ${state.activeThreadId === t.id ? 'active' : ''}" data-id="${t.id}">
-      <div class="thread-avatar">${t.initials}</div>
+      <div class="thread-avatar" style="${avatarGradient(t.initials)}">${t.initials}</div>
       <div class="thread-body">
         <div class="thread-head">
           <div class="thread-name">${t.name}</div>
@@ -14,20 +14,45 @@ function threadItem(t) {
         </div>
         <div class="thread-preview">${t.preview}</div>
       </div>
+      ${t.unread ? '<span class="thread-unread-dot"></span>' : ''}
     </button>
   `;
 }
 
+// Deterministic gradient per initials
+function avatarGradient(initials) {
+  const gradients = [
+    'background:linear-gradient(135deg,#4f8cff,#a855f7)',
+    'background:linear-gradient(135deg,#22d3ee,#4f8cff)',
+    'background:linear-gradient(135deg,#34d399,#22d3ee)',
+    'background:linear-gradient(135deg,#f472b6,#fbbf24)',
+    'background:linear-gradient(135deg,#a855f7,#f472b6)',
+  ];
+  const idx = (initials.charCodeAt(0) + (initials.charCodeAt(1) || 0)) % gradients.length;
+  return gradients[idx];
+}
+
 function renderList(container) {
   const list = container.querySelector('#threadsList');
+  if (!list) return;
+  if (state.threads.length === 0) {
+    list.innerHTML = '<div class="empty" style="padding:32px;">No hay mensajes en esta categoría</div>';
+    return;
+  }
   list.innerHTML = state.threads.map(threadItem).join('');
 }
 
 function renderDetail(container) {
   const detail = container.querySelector('#inboxDetail');
+  if (!detail) return;
+
   const thread = state.threads.find((t) => t.id === state.activeThreadId) || state.threads[0];
   if (!thread) {
-    detail.innerHTML = '<div class="empty">Seleccioná una conversación</div>';
+    detail.innerHTML = `
+      <div class="empty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <span style="font-size:36px;">💬</span>
+        <p>Seleccioná una conversación</p>
+      </div>`;
     return;
   }
   state.activeThreadId = thread.id;
@@ -35,17 +60,17 @@ function renderDetail(container) {
   detail.innerHTML = `
     <div class="detail-header">
       <div class="detail-user">
-        <div class="thread-avatar">${thread.initials}</div>
+        <div class="thread-avatar" style="${avatarGradient(thread.initials)}">${thread.initials}</div>
         <div>
           <div class="detail-name">${thread.name}</div>
           <div class="detail-title">${thread.title}</div>
         </div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="icon-btn" title="Ver perfil">
+        <button class="icon-btn" title="Ver perfil en LinkedIn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
-        <button class="icon-btn" title="Añadir a lead">
+        <button class="icon-btn" title="Añadir a leads CRM">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </button>
       </div>
@@ -53,9 +78,11 @@ function renderDetail(container) {
 
     <div class="detail-messages" id="detailMessages">
       ${thread.messages.map((m) => `
-        <div class="msg-bubble ${m.dir === 'in' ? 'incoming' : 'outgoing'}">
-          ${m.text}
-          <div class="msg-time">${m.time}</div>
+        <div class="msg-wrap ${m.dir === 'out' ? 'msg-wrap-out' : ''}">
+          <div class="msg-bubble ${m.dir === 'in' ? 'incoming' : 'outgoing'}">
+            ${m.text}
+            <div class="msg-time">${m.time}</div>
+          </div>
         </div>
       `).join('')}
     </div>
@@ -77,27 +104,37 @@ function renderDetail(container) {
   const msgs = detail.querySelector('#detailMessages');
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Bind compose
+  // Auto-resize textarea
   const input = detail.querySelector('#composeInput');
-  detail.querySelector('#sendBtn').addEventListener('click', async () => {
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+  });
+
+  // Send
+  const doSend = async () => {
     const text = input.value.trim();
     if (!text) return;
+    const sendBtn = detail.querySelector('#sendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = '...';
     await api.sendMessage(thread.id, text);
     state.threads = await api.getThreads(state.filter);
-    renderDetail(document);
-    toast('Mensaje enviado', 'success');
-  });
+    renderList(container);
+    renderDetail(container);
+    toast('Mensaje enviado ✅', 'success');
+  };
+
+  detail.querySelector('#sendBtn').addEventListener('click', doSend);
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      detail.querySelector('#sendBtn').click();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
   });
 
   // Template chips
   detail.querySelectorAll('.template-chip').forEach((chip) => {
     chip.addEventListener('click', () => {
       input.value = chip.dataset.template;
+      input.dispatchEvent(new Event('input'));
       input.focus();
     });
   });
@@ -121,7 +158,9 @@ export async function renderInbox(container) {
             <button class="filter-chip" data-filter="customers">Clientes</button>
             <button class="filter-chip" data-filter="partners">Partners</button>
           </div>
-          <div class="inbox-threads" id="threadsList"></div>
+          <div class="inbox-threads" id="threadsList">
+            ${[1,2,3,4].map(() => '<div class="thread-item skeleton" style="height:72px;margin:0;border-radius:0;"></div>').join('')}
+          </div>
         </div>
         <div class="inbox-detail" id="inboxDetail"></div>
       </div>

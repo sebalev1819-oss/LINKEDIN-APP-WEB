@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: linkedin-manager-api
+    env: node
+    region: oregon        # us-west — menor latencia para Argentina que ohio
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: HEADLESS
+        value: "true"
+      - key: DB_PATH
+        value: ./data/linkedin_manager.db
+      - key: ACTION_DELAY_MIN
+        value: "3000"
+      - key: ACTION_DELAY_MAX
+        value: "9000"
+      - key: GLOBAL_DAILY_LIMIT
+        value: "20"
+      - key: FRONTEND_URL
+        value: https://linkedin-manager-selmi.netlify.app
+      - key: SECRET_KEY
+        generateValue: true

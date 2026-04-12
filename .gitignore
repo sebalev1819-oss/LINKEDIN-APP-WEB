@@ -26,6 +26,12 @@ yarn-error.log*
 # Logs
 *.log
 
+# Base de datos (datos sensibles - no subir)
+*.db
+*.db-shm
+*.db-wal
+backend/data/
+
 # Mac
 .AppleDouble
 .LSOverride

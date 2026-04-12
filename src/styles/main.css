@@ -437,6 +437,25 @@ a { color: inherit; text-decoration: none; }
 
 .mobile-menu { display: none; }
 
+/* ── Sidebar overlay (mobile) ─────────────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity var(--t-med) var(--ease-out);
+}
+.sidebar-overlay.visible {
+  opacity: 1;
+}
+@media (max-width: 960px) {
+  .sidebar-overlay { display: block; pointer-events: none; }
+  .sidebar-overlay.visible { pointer-events: auto; }
+}
+
 .notif-dot {
   position: absolute;
   top: 9px;
@@ -571,6 +590,120 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================
+   Loading / Error states
+   ============================================ */
+.view-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 60%;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--bg-3);
+  border-top-color: var(--neon-blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.view-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 60%;
+  text-align: center;
+  color: var(--text-2);
+}
+.view-error .error-icon { font-size: 48px; }
+.view-error h2 { font-size: 20px; font-weight: 700; color: var(--text-0); }
+.view-error p { font-size: 13px; max-width: 360px; line-height: 1.6; }
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-color: transparent !important;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   Modal
+   ============================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity var(--t-med) var(--ease-out);
+}
+
+.modal-backdrop.open { opacity: 1; }
+
+.modal {
+  background: var(--bg-2);
+  border: 1px solid var(--glass-border-strong);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-lg), 0 0 60px rgba(79, 140, 255, 0.12);
+  transform: translateY(16px) scale(0.97);
+  transition: transform var(--t-med) var(--ease-out);
+}
+
+.modal-backdrop.open .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.modal-title { font-size: 17px; font-weight: 700; color: var(--text-0); }
+.modal-close-btn { width: 32px; height: 32px; }
+
+.modal-body {
+  padding: 20px 24px;
+  color: var(--text-1);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* ============================================
    Toast notifications
    ============================================ */
 .toast-container {
@@ -587,24 +720,87 @@ a { color: inherit; text-decoration: none; }
 .toast {
   pointer-events: auto;
   min-width: 280px;
-  padding: 14px 18px;
+  max-width: 360px;
+  padding: 13px 16px;
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border-strong);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   box-shadow: var(--shadow-lg);
   animation: slideInRight var(--t-med) var(--ease-out);
   font-size: 13px;
+  cursor: pointer;
 }
 
+.toast span { flex: 1; line-height: 1.4; }
+
+.toast-close {
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color var(--t-fast) var(--ease-out);
+}
+.toast-close:hover { color: var(--text-0); }
+
 .toast.success { border-left: 3px solid var(--neon-green); }
-.toast.info { border-left: 3px solid var(--neon-blue); }
+.toast.info    { border-left: 3px solid var(--neon-blue);  }
 .toast.warning { border-left: 3px solid var(--neon-amber); }
+.toast.error   { border-left: 3px solid var(--neon-red);   }
 
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+/* ── Backend status indicator ────────────────────────────────────────────────*/
+.backend-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: var(--bg-3);
+  border: 1px solid var(--glass-border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: default;
+  transition: all var(--t-fast) var(--ease-out);
+}
+
+.backend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neon-amber);
+  flex-shrink: 0;
+  transition: background var(--t-med) var(--ease-out);
+}
+
+.backend-status.live {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.06);
+  color: var(--neon-green);
+}
+
+.backend-status.live .backend-dot {
+  background: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.backend-status.mock {
+  border-color: rgba(251, 191, 36, 0.2);
+  background: rgba(251, 191, 36, 0.05);
+  color: var(--neon-amber);
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 4px var(--neon-green); }
+  50%       { box-shadow: 0 0 12px var(--neon-green); }
 }

@@ -5,12 +5,18 @@ const columns = [
   { key: 'new', title: 'Nuevos', cls: 'col-new' },
   { key: 'contacted', title: 'Contactados', cls: 'col-contacted' },
   { key: 'engaged', title: 'Interesados', cls: 'col-engaged' },
-  { key: 'won', title: 'Cerrados', cls: 'col-won' },
+  { key: 'won', title: 'Cerrados 🏆', cls: 'col-won' },
 ];
 
-function tagLabel(tag) {
-  const map = { hr: 'HR', ceo: 'CEO', latam: 'LATAM', wellness: 'Wellness' };
-  return map[tag] || tag;
+const tagLabels = { hr: 'HR', ceo: 'CEO', latam: 'LATAM', wellness: 'Wellness' };
+
+function scoreBar(score) {
+  const color = score >= 85 ? 'var(--neon-green)' : score >= 70 ? 'var(--neon-amber)' : 'var(--neon-pink)';
+  return `
+    <div class="lead-score-bar" title="Score: ${score}">
+      <div class="lead-score-fill" style="width:${score}%;background:${color};"></div>
+    </div>
+  `;
 }
 
 function leadCard(lead) {
@@ -24,10 +30,14 @@ function leadCard(lead) {
         </div>
       </div>
       <div class="lead-tags">
-        ${lead.tags.map((t) => `<span class="tag ${t}">${tagLabel(t)}</span>`).join('')}
+        ${lead.tags.map((t) => `<span class="tag ${t}">${tagLabels[t] || t}</span>`).join('')}
       </div>
+      ${scoreBar(lead.score)}
       <div class="lead-foot">
-        <span>${lead.time}</span>
+        <span style="display:flex;align-items:center;gap:4px;">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          ${lead.time}
+        </span>
         <span class="lead-score">
           <span class="heat">★</span>
           <span>${lead.score}</span>
@@ -46,7 +56,7 @@ function kanbanColumn(col, leads) {
         <div class="col-count">${items.length}</div>
       </div>
       <div class="kanban-cards" data-col-body="${col.key}">
-        ${items.map(leadCard).join('')}
+        ${items.length ? items.map(leadCard).join('') : `<div class="kanban-empty">Arrastrá leads aquí</div>`}
       </div>
     </div>
   `;
@@ -61,11 +71,11 @@ export async function renderLeads(container) {
           <p class="view-subtitle">Pipeline visual de prospectos B2B · Arrastrá para mover</p>
         </div>
         <div class="view-actions">
-          <button class="btn btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          <button class="btn btn-secondary" id="filterBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filtros
           </button>
-          <button class="btn btn-primary">
+          <button class="btn btn-primary" id="addLeadBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Añadir lead
           </button>
@@ -73,7 +83,7 @@ export async function renderLeads(container) {
       </div>
 
       <div class="kanban" id="kanban">
-        <div class="empty">Cargando leads...</div>
+        ${columns.map((c) => `<div class="kanban-col ${c.cls} skeleton" style="min-height:400px;"></div>`).join('')}
       </div>
     </div>
   `;
@@ -82,47 +92,64 @@ export async function renderLeads(container) {
   const kanban = container.querySelector('#kanban');
   kanban.innerHTML = columns.map((c) => kanbanColumn(c, leads)).join('');
 
-  // Drag & drop
+  container.querySelector('#addLeadBtn')?.addEventListener('click', () => {
+    toast('Formulario de leads próximamente ✨', 'info');
+  });
+  container.querySelector('#filterBtn')?.addEventListener('click', () => {
+    toast('Panel de filtros próximamente 🔍', 'info');
+  });
+
+  // ── Drag & drop ──────────────────────────────────────────────────────────────
   let draggingId = null;
   let sourceCol = null;
+  let dragEl = null;
 
   kanban.addEventListener('dragstart', (e) => {
     const card = e.target.closest('.lead-card');
     if (!card) return;
     draggingId = card.dataset.id;
     sourceCol = card.closest('.kanban-col').dataset.col;
-    card.style.opacity = '0.4';
+    dragEl = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    // Allow browser to render before applying opacity
+    setTimeout(() => { if (card) card.style.opacity = '0.35'; }, 0);
   });
 
-  kanban.addEventListener('dragend', (e) => {
-    const card = e.target.closest('.lead-card');
-    if (card) card.style.opacity = '';
+  kanban.addEventListener('dragend', () => {
+    dragEl?.classList.remove('dragging');
+    if (dragEl) dragEl.style.opacity = '';
+    dragEl = null;
+    kanban.querySelectorAll('.kanban-col').forEach((col) => col.classList.remove('drag-over'));
   });
 
   kanban.addEventListener('dragover', (e) => {
     const col = e.target.closest('.kanban-col');
     if (!col) return;
     e.preventDefault();
-    col.style.background = 'rgba(79,140,255,0.08)';
+    e.dataTransfer.dropEffect = 'move';
+    kanban.querySelectorAll('.kanban-col').forEach((c) => c.classList.remove('drag-over'));
+    col.classList.add('drag-over');
   });
 
   kanban.addEventListener('dragleave', (e) => {
     const col = e.target.closest('.kanban-col');
-    if (col) col.style.background = '';
+    if (col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
   });
 
   kanban.addEventListener('drop', async (e) => {
     const col = e.target.closest('.kanban-col');
     if (!col || !draggingId) return;
     e.preventDefault();
-    col.style.background = '';
+    col.classList.remove('drag-over');
     const targetCol = col.dataset.col;
     if (targetCol === sourceCol) return;
 
     await api.moveLead(draggingId, sourceCol, targetCol);
     const updated = await api.getLeads();
     kanban.innerHTML = columns.map((c) => kanbanColumn(c, updated)).join('');
-    toast(`Lead movido a ${columns.find((c) => c.key === targetCol).title}`, 'success');
+    const colName = columns.find((c) => c.key === targetCol)?.title || targetCol;
+    toast(`Lead movido a "${colName}" 🎯`, 'success');
     draggingId = null;
     sourceCol = null;
   });

@@ -1,130 +1,313 @@
-// API Service Layer
-// ----------------------------------------------------------------
-// Este módulo es el único punto de contacto entre la UI y los datos.
-// Hoy lee desde /src/data/mock.js (datos simulados).
-// Mañana, cuando tengas el backend Python (FastAPI / Flask / Puppeteer RPA),
-// solo hay que reemplazar los cuerpos de estas funciones con `fetch(...)`.
-//
-// Ejemplo de migración:
-//   export async function getMetrics() {
-//     const r = await fetch(`${API_BASE}/metrics`, { headers: authHeaders() });
-//     return r.json();
-//   }
-// ----------------------------------------------------------------
+/**
+ * src/js/services/api.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Single source of truth for all data access.
+ *
+ * MODE DETECTION (auto):
+ *   - Si el backend responde en http://localhost:8000/api/health → modo LIVE
+ *   - Si no hay backend → modo MOCK (datos simulados)
+ *
+ * Para forzar un modo:
+ *   localStorage.setItem('apiMode', 'mock')   → siempre mock
+ *   localStorage.setItem('apiMode', 'live')   → siempre live (puede fallar si no hay backend)
+ *   localStorage.removeItem('apiMode')         → auto-detección
+ */
 
 import * as mock from '../../data/mock.js';
 
-// Configuración base — cambiar cuando el backend esté online
 export const API_BASE = 'http://localhost:8000/api';
-export const USE_MOCK = true;
 
-// Simula latencia de red para que la UI se sienta real
-const delay = (ms = 180) => new Promise((r) => setTimeout(r, ms));
+// ── Mode detection ────────────────────────────────────────────────────────────
+let _useMock = null;  // null = not determined yet
 
-async function mockResponse(data, ms) {
+async function isMockMode() {
+  // Override via localStorage for development
+  const forced = localStorage.getItem('apiMode');
+  if (forced === 'mock') return true;
+  if (forced === 'live') return false;
+
+  // Auto-detect: try to reach the backend health endpoint
+  if (_useMock === null) {
+    try {
+      const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(2000) });
+      _useMock = !r.ok;
+    } catch {
+      _useMock = true;  // backend not available → use mock
+    }
+    console.info(`[API] Mode: ${_useMock ? '📦 MOCK (sin backend)' : '🌐 LIVE (backend conectado)'}`);
+  }
+  return _useMock;
+}
+
+// Reset so next call re-detects (useful after "Conectar backend" button)
+export function resetModeDetection() { _useMock = null; }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const delay = (ms = 180) => new Promise(r => setTimeout(r, ms));
+
+async function mockResponse(data, ms = 180) {
   await delay(ms);
   return structuredClone(data);
 }
 
-// ---------- Dashboard ----------
+/**
+ * Fetch wrapper: handles network errors, non-OK responses, and JSON parsing.
+ * Throws a user-friendly error on failure.
+ */
+async function apiFetch(path, options = {}) {
+  const url = `${API_BASE}${path}`;
+  try {
+    const r = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+    });
+
+    if (!r.ok) {
+      let msg = `Error ${r.status}`;
+      try { const body = await r.json(); msg = body.error || msg; } catch {}
+      throw new Error(msg);
+    }
+
+    return r.json();
+  } catch (err) {
+    // Network error → fallback to mock
+    if (err.name === 'TypeError' || err.name === 'AbortError') {
+      console.warn(`[API] Backend no disponible (${path}) → usando datos mock`);
+      _useMock = true;
+      throw err;
+    }
+    throw err;
+  }
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 export async function getMetrics() {
-  if (USE_MOCK) return mockResponse(mock.metrics);
-  const r = await fetch(`${API_BASE}/metrics`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.metrics);
+  return apiFetch('/metrics');
 }
 
 export async function getWeeklyChart() {
-  if (USE_MOCK) return mockResponse(mock.weeklyChart);
-  const r = await fetch(`${API_BASE}/analytics/weekly`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.weeklyChart);
+  return apiFetch('/analytics/weekly');
+}
+
+export async function getChartData() {
+  if (await isMockMode()) return mockResponse(mock.chartData);
+  return apiFetch('/analytics/chart');
 }
 
 export async function getActivity() {
-  if (USE_MOCK) return mockResponse(mock.activity);
-  const r = await fetch(`${API_BASE}/activity`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.activity);
+  return apiFetch('/activity');
 }
 
-// ---------- Campaigns ----------
+// ── Campaigns ─────────────────────────────────────────────────────────────────
 export async function getCampaigns() {
-  if (USE_MOCK) return mockResponse(mock.campaigns);
-  const r = await fetch(`${API_BASE}/campaigns`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.campaigns);
+  return apiFetch('/campaigns');
 }
 
 export async function toggleCampaign(id) {
-  if (USE_MOCK) {
-    const c = mock.campaigns.find((x) => x.id === id);
+  if (await isMockMode()) {
+    const c = mock.campaigns.find(x => x.id === id);
     if (c) c.status = c.status === 'active' ? 'paused' : 'active';
     return mockResponse({ ok: true });
   }
-  const r = await fetch(`${API_BASE}/campaigns/${id}/toggle`, { method: 'POST' });
-  return r.json();
+  return apiFetch(`/campaigns/${id}/toggle`, { method: 'POST' });
 }
 
-// ---------- Inbox ----------
+// ── Inbox ─────────────────────────────────────────────────────────────────────
 export async function getThreads(filter = 'all') {
-  if (USE_MOCK) {
-    const data = filter === 'all' ? mock.threads : mock.threads.filter((t) => t.filter === filter);
+  if (await isMockMode()) {
+    const data = filter === 'all' ? mock.threads : mock.threads.filter(t => t.filter === filter);
     return mockResponse(data);
   }
-  const r = await fetch(`${API_BASE}/threads?filter=${filter}`);
-  return r.json();
+  return apiFetch(`/threads${filter !== 'all' ? `?filter=${filter}` : ''}`);
 }
 
 export async function getQuickTemplates() {
-  if (USE_MOCK) return mockResponse(mock.quickTemplates);
-  const r = await fetch(`${API_BASE}/templates/quick`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.quickTemplates);
+  return apiFetch('/templates/quick');
 }
 
 export async function sendMessage(threadId, text) {
-  if (USE_MOCK) {
-    const t = mock.threads.find((x) => x.id === threadId);
-    if (t) t.messages.push({ dir: 'out', text, time: 'ahora' });
+  if (await isMockMode()) {
+    const t = mock.threads.find(x => x.id === threadId);
+    if (t) t.messages.push({ id: Date.now().toString(), dir: 'out', text, time: 'ahora' });
     return mockResponse({ ok: true });
   }
-  const r = await fetch(`${API_BASE}/threads/${threadId}/messages`, {
+  return apiFetch(`/threads/${threadId}/messages`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
-  return r.json();
 }
 
-// ---------- Leads CRM ----------
+// ── Leads CRM ─────────────────────────────────────────────────────────────────
 export async function getLeads() {
-  if (USE_MOCK) return mockResponse(mock.leads);
-  const r = await fetch(`${API_BASE}/leads`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.leads);
+  return apiFetch('/leads');
 }
 
 export async function moveLead(leadId, fromCol, toCol) {
-  if (USE_MOCK) {
-    const lead = mock.leads[fromCol]?.find((l) => l.id === leadId);
+  if (await isMockMode()) {
+    const lead = mock.leads[fromCol]?.find(l => l.id === leadId);
     if (lead) {
-      mock.leads[fromCol] = mock.leads[fromCol].filter((l) => l.id !== leadId);
+      mock.leads[fromCol] = mock.leads[fromCol].filter(l => l.id !== leadId);
+      if (!mock.leads[toCol]) mock.leads[toCol] = [];
       mock.leads[toCol].push(lead);
     }
     return mockResponse({ ok: true });
   }
-  const r = await fetch(`${API_BASE}/leads/${leadId}/move`, {
+  return apiFetch(`/leads/${leadId}/move`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: fromCol, to: toCol }),
   });
-  return r.json();
 }
 
-// ---------- Content scheduler ----------
+// ── Content ───────────────────────────────────────────────────────────────────
 export async function getScheduledPosts() {
-  if (USE_MOCK) return mockResponse(mock.scheduledPosts);
-  const r = await fetch(`${API_BASE}/posts/scheduled`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.scheduledPosts);
+  return apiFetch('/posts/scheduled');
 }
 
 export async function getCalendarDays() {
-  if (USE_MOCK) return mockResponse(mock.calendarDays);
-  const r = await fetch(`${API_BASE}/calendar`);
-  return r.json();
+  if (await isMockMode()) return mockResponse(mock.calendarDays);
+  return apiFetch('/calendar');
+}
+
+// ── Automations ───────────────────────────────────────────────────────────────
+export async function getAutomations() {
+  if (await isMockMode()) return mockResponse(mock.automations);
+  return apiFetch('/automations');
+}
+
+export async function getAutomationStats() {
+  if (await isMockMode()) return mockResponse(mock.automationStats);
+  return apiFetch('/automations/stats');
+}
+
+export async function getAutomationLog() {
+  if (await isMockMode()) return mockResponse(mock.automationLog);
+  return apiFetch('/automations/log');
+}
+
+export async function toggleAutomation(id) {
+  if (await isMockMode()) {
+    const a = mock.automations.find(x => x.id === id);
+    if (a) a.status = a.status === 'active' ? 'paused' : 'active';
+    return mockResponse({ ok: true });
+  }
+  return apiFetch(`/automations/${id}/toggle`, { method: 'POST' });
+}
+
+export async function createAutomation(data) {
+  if (await isMockMode()) {
+    const newAuto = {
+      id: `a${mock.automations.length + 1}`,
+      name: `${data.type} — nueva regla`,
+      type: data.type || 'message',
+      status: 'active',
+      triggerLabel: 'Configurado manualmente',
+      trigger: 'manual',
+      target: data.targets || {},
+      content: data.content || {},
+      schedule: data.schedule || { dailyLimit: 20 },
+      stats: { actionsToday: 0, total: 0, successRate: 0 },
+      lastRun: 'Nunca',
+    };
+    mock.automations.push(newAuto);
+    mock.automationStats.active++;
+    return mockResponse(newAuto);
+  }
+  return apiFetch('/automations', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ── LinkedIn Accounts (cookie-based) ──────────────────────────────────────────
+export async function getAccounts() {
+  if (await isMockMode()) return mockResponse(mock.linkedinAccounts, 300);
+  return apiFetch('/accounts');
+}
+
+export async function connectAccount(cookieData) {
+  if (await isMockMode()) {
+    const newAcc = {
+      id: `acc${mock.linkedinAccounts.length + 1}`,
+      name: cookieData.name || 'Nueva cuenta',
+      headline: 'Cuenta conectada',
+      initials: (cookieData.name || 'NC').slice(0, 2).toUpperCase(),
+      cookieSet: true,
+      cookieExpiry: '90 días restantes',
+      sessionHealth: 100,
+      status: 'active',
+      connectedAt: new Date().toISOString().slice(0, 10),
+      stats: { actionsToday: 0, actionsWeek: 0, postsPublished: 0, connectionsThisMonth: 0 },
+      limits: { daily: 150, used: 0 },
+    };
+    mock.linkedinAccounts.push(newAcc);
+    return mockResponse(newAcc, 1500);
+  }
+  return apiFetch('/accounts/connect', {
+    method: 'POST',
+    body: JSON.stringify(cookieData),
+  });
+}
+
+export async function disconnectAccount(id) {
+  if (await isMockMode()) {
+    const idx = mock.linkedinAccounts.findIndex(a => a.id === id);
+    if (idx >= 0) mock.linkedinAccounts.splice(idx, 1);
+    return mockResponse({ ok: true });
+  }
+  return apiFetch(`/accounts/${id}`, { method: 'DELETE' });
+}
+
+// ── Post Queue ────────────────────────────────────────────────────────────────
+export async function getPostQueue() {
+  if (await isMockMode()) return mockResponse(mock.postQueue, 250);
+  return apiFetch('/posts/queue');
+}
+
+export async function getSuggestedHashtags() {
+  if (await isMockMode()) return mockResponse(mock.suggestedHashtags, 100);
+  return apiFetch('/posts/hashtags');
+}
+
+export async function schedulePost(data) {
+  if (await isMockMode()) {
+    const acc = mock.linkedinAccounts.find(a => a.id === data.accountId);
+    const post = {
+      id: `pq${mock.postQueue.length + 1}`,
+      accountId: data.accountId,
+      accountName: acc?.name || 'Cuenta',
+      status: data.publishNow ? 'published' : (data.scheduledAt ? 'scheduled' : 'draft'),
+      scheduledAt: data.scheduledAt || null,
+      publishedAt: data.publishNow ? 'Ahora' : null,
+      type: data.type || 'Post',
+      text: data.text,
+      hashtags: data.hashtags || [],
+      estimatedReach: '1.2K',
+      metrics: data.publishNow ? { likes: 0, comments: 0, views: 0, reposts: 0 } : null,
+    };
+    mock.postQueue.unshift(post);
+    return mockResponse(post, 800);
+  }
+  return apiFetch('/posts', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePost(id) {
+  if (await isMockMode()) {
+    const idx = mock.postQueue.findIndex(p => p.id === id);
+    if (idx >= 0) mock.postQueue.splice(idx, 1);
+    return mockResponse({ ok: true });
+  }
+  return apiFetch(`/posts/${id}`, { method: 'DELETE' });
 }
