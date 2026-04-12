@@ -261,6 +261,61 @@ input,textarea{font-family:inherit;color:inherit}
 .toast.info{border-left:3px solid var(--neon-blue)}
 @keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 
+/* ── Skills ────────────────────────────────────────────────────────── */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-bottom:28px}
+.skill-card{display:flex;flex-direction:column;gap:14px}
+.skill-head{display:flex;align-items:center;gap:14px}
+.skill-badge{width:46px;height:46px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.skill-name{font-size:15px;font-weight:600;margin-bottom:3px}
+.skill-cat{font-size:11px;color:var(--text-2);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+.skill-bar-wrap{height:6px;background:var(--bg-3);border-radius:10px;overflow:hidden}
+.skill-bar{height:100%;border-radius:10px;box-shadow:0 0 10px currentColor;transition:width .6s var(--ease-out)}
+.skill-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-top:12px;border-top:1px solid var(--glass-border)}
+.skill-stat{text-align:center;font-size:11px;color:var(--text-2)}
+.skill-stat strong{display:block;font-size:16px;font-weight:700;color:var(--text-0);margin-bottom:2px}
+.skill-actions{display:flex;gap:8px}
+.endorse-queue{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:22px}
+.queue-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.queue-list{display:flex;flex-direction:column;gap:10px;max-height:380px;overflow-y:auto}
+.queue-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:var(--radius-md);transition:all var(--t-fast) var(--ease-out)}
+.queue-item:hover{border-color:var(--glass-border-strong)}
+.queue-avatar{width:36px;height:36px;border-radius:50%;background:var(--grad-secondary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.queue-info{flex:1;min-width:0}
+.queue-name{font-size:13px;font-weight:600}
+.queue-skill{font-size:11px;color:var(--neon-cyan);margin-top:1px}
+.queue-status{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:600}
+.queue-status.pending{background:rgba(251,191,36,.12);color:var(--neon-amber)}
+.queue-status.done{background:rgba(52,211,153,.12);color:var(--neon-green)}
+
+/* ── Connectors ─────────────────────────────────────────────────────── */
+.connectors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;margin-bottom:28px}
+.connector-card{display:flex;flex-direction:column;gap:16px;transition:all var(--t-med) var(--ease-out)}
+.connector-card.connected{border-color:rgba(52,211,153,.35);box-shadow:0 0 0 1px rgba(52,211,153,.2)}
+.connector-head{display:flex;align-items:center;gap:14px}
+.connector-logo{width:48px;height:48px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid var(--glass-border)}
+.connector-name{font-size:15px;font-weight:700;margin-bottom:3px}
+.connector-desc{font-size:12px;color:var(--text-2);line-height:1.45}
+.connector-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-2);border-radius:var(--radius-sm);border:1px solid var(--glass-border)}
+.toggle-label{font-size:12px;font-weight:600;color:var(--text-1)}
+.toggle-switch{position:relative;width:42px;height:24px;cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--bg-3);border-radius:24px;transition:background var(--t-fast)}
+.toggle-thumb{position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform var(--t-fast) var(--ease-out);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.toggle-switch input:checked + .toggle-track{background:var(--neon-green)}
+.toggle-switch input:checked ~ .toggle-thumb{transform:translateX(18px)}
+.connector-field{display:flex;flex-direction:column;gap:6px}
+.connector-field label{font-size:11px;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.connector-input{width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-0);transition:all var(--t-fast)}
+.connector-input:focus{outline:none;border-color:var(--neon-blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}
+.connector-stats{display:flex;gap:16px;padding-top:12px;border-top:1px solid var(--glass-border)}
+.conn-stat{text-align:center;flex:1}
+.conn-stat-val{font-size:18px;font-weight:700;color:var(--text-0)}
+.conn-stat-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.webhook-banner{background:linear-gradient(135deg,rgba(79,140,255,.1),rgba(168,85,247,.1));border:1px solid rgba(79,140,255,.25);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px}
+.webhook-icon{width:44px;height:44px;border-radius:var(--radius-md);background:var(--grad-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.webhook-icon svg{width:22px;height:22px;color:#fff}
+.webhook-url{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--neon-cyan);background:var(--bg-2);padding:8px 12px;border-radius:6px;border:1px solid var(--glass-border);margin-top:6px;word-break:break-all}
+
 @media(max-width:960px){
   .app-shell{grid-template-columns:1fr}
   .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);z-index:100;transform:translateX(-100%);transition:transform var(--t-med) var(--ease-out);box-shadow:var(--shadow-lg)}
@@ -274,6 +329,52 @@ input,textarea{font-family:inherit;color:inherit}
   .btn{font-size:12px;padding:10px 14px}
   .view-title{font-size:22px}
 }
+
+/* ── Auth / Login ──────────────────────────────────────────────────────────── */
+.auth-page{position:fixed;inset:0;background:var(--bg-0);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.auth-page::before{content:'';position:fixed;inset:0;background:var(--grad-glow);pointer-events:none}
+.auth-card{position:relative;width:100%;max-width:420px;background:var(--glass-bg);backdrop-filter:blur(24px);border:1px solid var(--glass-border-strong);border-radius:24px;padding:40px;box-shadow:0 32px 64px rgba(0,0,0,.6),var(--shadow-glow-blue)}
+.auth-logo{width:56px;height:56px;border-radius:var(--radius-lg);background:var(--grad-primary);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:var(--shadow-glow-blue)}
+.auth-logo svg{width:28px;height:28px;color:#fff}
+.auth-title{text-align:center;font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.auth-sub{text-align:center;font-size:13px;color:var(--text-2);margin-bottom:32px}
+.auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.auth-field label{font-size:12px;font-weight:600;color:var(--text-1);letter-spacing:.04em}
+.auth-input{width:100%;padding:13px 16px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:var(--radius-md);font-size:14px;color:var(--text-0);transition:all var(--t-fast)}
+.auth-input:focus{outline:none;border-color:var(--neon-blue);background:var(--bg-3);box-shadow:0 0 0 3px rgba(79,140,255,.15)}
+.auth-input::placeholder{color:var(--text-3)}
+.auth-error{font-size:12px;color:var(--neon-red);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;display:none}
+.auth-error.show{display:block}
+.auth-btn{width:100%;padding:14px;background:var(--grad-primary);color:#fff;border-radius:var(--radius-md);font-size:14px;font-weight:700;letter-spacing:.01em;box-shadow:var(--shadow-glow-blue),var(--shadow-md);transition:all var(--t-fast);margin-top:4px}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-glow-purple),var(--shadow-lg)}
+.auth-btn:disabled{opacity:.6;transform:none;cursor:not-allowed}
+.auth-version{text-align:center;font-size:11px;color:var(--text-3);margin-top:20px}
+
+/* ── Admin Panel ───────────────────────────────────────────────────────────── */
+.admin-grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+@media(max-width:1100px){.admin-grid{grid-template-columns:1fr}}
+.users-table{width:100%;border-collapse:collapse}
+.users-table th{font-size:11px;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;text-align:left;border-bottom:1px solid var(--glass-border)}
+.users-table td{padding:12px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.users-table tr:hover td{background:var(--bg-hover)}
+.role-badge{padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.role-badge.admin{background:rgba(168,85,247,.18);color:var(--neon-purple)}
+.role-badge.user{background:rgba(79,140,255,.15);color:var(--neon-blue)}
+.new-user-form{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:24px}
+.form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form-row label{font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
+.form-input{padding:10px 13px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:var(--radius-sm);font-size:13px;color:var(--text-0);transition:all var(--t-fast)}
+.form-input:focus{outline:none;border-color:var(--neon-blue);box-shadow:0 0 0 3px rgba(79,140,255,.12)}
+.form-select{padding:10px 13px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:var(--radius-sm);font-size:13px;color:var(--text-0)}
+
+/* ── Logout / User chip in topbar ─────────────────────────────────────────── */
+.user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:var(--radius-md);cursor:default}
+.user-chip-avatar{width:28px;height:28px;border-radius:50%;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.user-chip-name{font-size:12px;font-weight:600;color:var(--text-0)}
+.user-chip-role{font-size:10px;color:var(--text-2)}
+.logout-btn{width:34px;height:34px;border-radius:var(--radius-sm);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--neon-red);display:flex;align-items:center;justify-content:center;transition:all var(--t-fast)}
+.logout-btn:hover{background:rgba(248,113,113,.2);transform:translateY(-1px)}
+.logout-btn svg{width:15px;height:15px}
 </style>
 </head>
 <body>
@@ -294,15 +395,17 @@ input,textarea{font-family:inherit;color:inherit}
       <button class="nav-item" data-view="inbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg><span>Inbox</span><span class="nav-badge neon">12</span></button>
       <button class="nav-item" data-view="leads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span>Leads CRM</span></button>
       <button class="nav-item" data-view="content"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Contenido</span></button>
+      <button class="nav-item" data-view="skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Habilidades</span><span class="nav-badge">248</span></button>
+      <button class="nav-item" data-view="connectors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Conectores</span><span class="nav-badge neon">4</span></button>
     </nav>
     <div class="sidebar-footer">
-      <div class="profile-card">
-        <div class="profile-avatar">SL</div>
+      <div class="profile-card" id="sidebarProfileCard">
+        <div class="profile-avatar" id="sidebarAvatar">SL</div>
         <div class="profile-info">
-          <div class="profile-name">Sebastián Levin</div>
-          <div class="profile-role">Founder · Care Assistance</div>
+          <div class="profile-name" id="sidebarName">Sebastián Levin</div>
+          <div class="profile-role" id="sidebarRole">Founder · Care Assistance</div>
         </div>
-        <button class="profile-settings" title="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+        <button class="profile-settings logout-btn" title="Cerrar sesión" onclick="AUTH.logout()" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--neon-red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
     </div>
   </aside>
@@ -320,6 +423,7 @@ input,textarea{font-family:inherit;color:inherit}
       <div class="topbar-right">
         <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="notif-dot"></span></button>
         <button class="btn btn-primary" id="newCampaignBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva campaña</button>
+        <button class="logout-btn" title="Cerrar sesión" onclick="AUTH.logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
     </header>
     <div class="view-container" id="viewContainer"></div>
@@ -328,6 +432,110 @@ input,textarea{font-family:inherit;color:inherit}
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+// ============================================
+// AUTH SYSTEM
+// ============================================
+const AUTH = (() => {
+  const SALT = 'lm-salt-2026-sebalev';
+  const STORE_KEY = 'lm_users_v2';
+  const SESSION_KEY = 'lm_session_v2';
+
+  async function hashPwd(pwd) {
+    const data = new TextEncoder().encode(pwd + SALT);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function getUsers() { return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }
+  function saveUsers(u) { localStorage.setItem(STORE_KEY, JSON.stringify(u)); }
+  function getSession() { return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null'); }
+  function saveSession(u) { sessionStorage.setItem(SESSION_KEY, JSON.stringify(u)); }
+
+  async function init() {
+    let users = getUsers();
+    if (!users.length) {
+      const hash = await hashPwd('Admin2026!');
+      users = [{ id:'admin-1', name:'Sebastián Levin', username:'sebastian', role:'admin', passwordHash:hash, company:'Care Assistance', createdAt:new Date().toISOString() }];
+      saveUsers(users);
+    }
+  }
+
+  async function login(username, password) {
+    const users = getUsers();
+    const user = users.find(u => u.username === username.toLowerCase().trim());
+    if (!user) return { ok:false, error:'Usuario no encontrado' };
+    const hash = await hashPwd(password);
+    if (hash !== user.passwordHash) return { ok:false, error:'Contraseña incorrecta' };
+    saveSession(user);
+    return { ok:true, user };
+  }
+
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  }
+
+  function current() { return getSession(); }
+  function isAdmin() { const s = getSession(); return s && s.role === 'admin'; }
+
+  async function createUser(name, username, password, role, company) {
+    const users = getUsers();
+    if (users.find(u => u.username === username.toLowerCase())) return { ok:false, error:'El usuario ya existe' };
+    const hash = await hashPwd(password);
+    const user = { id:'u-'+Date.now(), name, username:username.toLowerCase(), role, passwordHash:hash, company, createdAt:new Date().toISOString() };
+    users.push(user);
+    saveUsers(users);
+    return { ok:true, user };
+  }
+
+  function deleteUser(id) {
+    const users = getUsers().filter(u => u.id !== id);
+    saveUsers(users);
+  }
+
+  function allUsers() { return getUsers(); }
+
+  async function showLogin() {
+    await init();
+    document.body.innerHTML = `
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-logo"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 10v6M8 7.5v.01M12 16v-4M12 16c0-2 1-4 3-4s1 2 1 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div class="auth-title">LinkedIn Manager</div>
+        <div class="auth-sub">Founder Edition · Iniciá sesión para continuar</div>
+        <div class="auth-error" id="authError"></div>
+        <div class="auth-field"><label>Usuario</label><input class="auth-input" id="authUser" type="text" placeholder="tu usuario" autocomplete="username"/></div>
+        <div class="auth-field"><label>Contraseña</label><input class="auth-input" id="authPass" type="password" placeholder="••••••••" autocomplete="current-password"/></div>
+        <button class="auth-btn" id="authBtn">Ingresar</button>
+        <div class="auth-version">LinkedIn Manager v2.0 · Acceso restringido</div>
+      </div>
+    </div>
+    <div class="toast-container" id="toastContainer"></div>`;
+
+    const doLogin = async () => {
+      const btn = document.getElementById('authBtn');
+      const err = document.getElementById('authError');
+      const u = document.getElementById('authUser').value;
+      const p = document.getElementById('authPass').value;
+      if (!u || !p) { err.textContent='Completá usuario y contraseña'; err.classList.add('show'); return; }
+      btn.disabled = true; btn.textContent = 'Verificando...';
+      const res = await login(u, p);
+      if (res.ok) {
+        btn.textContent = '✓ Ingresando...';
+        setTimeout(() => location.reload(), 400);
+      } else {
+        err.textContent = res.error; err.classList.add('show');
+        btn.disabled = false; btn.textContent = 'Ingresar';
+      }
+    };
+    document.getElementById('authBtn').addEventListener('click', doLogin);
+    document.getElementById('authPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+    document.getElementById('authUser').focus();
+  }
+
+  return { init, login, logout, current, isAdmin, createUser, deleteUser, allUsers, showLogin };
+})();
+
 // ============================================
 // MOCK DATA
 // ============================================
@@ -384,6 +592,30 @@ const DATA = {
       { id:'l8', name:'Carolina Bravo', company:'Globant', initials:'CB', tags:['hr','wellness'], score:95, time:'2w' },
     ],
   },
+  skills: [
+    { id:'sk1', emoji:'🧠', name:'Bienestar Corporativo', cat:'Health & Wellness', color:'#34d399', endorsements:248, given:89, pending:12, progress:82 },
+    { id:'sk2', emoji:'💼', name:'Gestión de RRHH', cat:'Human Resources', color:'#4f8cff', endorsements:196, given:67, pending:8, progress:71 },
+    { id:'sk3', emoji:'🌎', name:'Expansión LATAM', cat:'Business Development', color:'#a855f7', endorsements:143, given:52, pending:5, progress:58 },
+    { id:'sk4', emoji:'📊', name:'Estrategia Comercial', cat:'Sales & Strategy', color:'#fbbf24', endorsements:112, given:41, pending:3, progress:45 },
+    { id:'sk5', emoji:'🤝', name:'Alianzas Estratégicas', cat:'Partnerships', color:'#22d3ee', endorsements:87, given:33, pending:7, progress:36 },
+    { id:'sk6', emoji:'🚀', name:'Liderazgo Fundador', cat:'Leadership', color:'#f472b6', endorsements:201, given:74, pending:15, progress:75 },
+  ],
+  endorseQueue: [
+    { id:'eq1', initials:'MG', name:'María González', skill:'Bienestar Corporativo', status:'done' },
+    { id:'eq2', initials:'CR', name:'Carlos Ramírez', skill:'Gestión de RRHH', status:'done' },
+    { id:'eq3', initials:'AS', name:'Ana Silva', skill:'Expansión LATAM', status:'pending' },
+    { id:'eq4', initials:'JP', name:'Juan Pérez', skill:'Alianzas Estratégicas', status:'pending' },
+    { id:'eq5', initials:'LM', name:'Laura Méndez', skill:'Bienestar Corporativo', status:'pending' },
+    { id:'eq6', initials:'DF', name:'Diego Fuentes', skill:'Gestión de RRHH', status:'pending' },
+  ],
+  connectors: [
+    { id:'cn1', emoji:'🟠', name:'HubSpot CRM', desc:'Sincronizá leads y contactos automáticamente con tu pipeline de HubSpot.', connected:true, stats:{synced:184,lastSync:'hace 5 min',errors:0}, field:{label:'API Key',placeholder:'hubspot-api-key-xxxxx',value:'hs-*****-redacted'} },
+    { id:'cn2', emoji:'☁️', name:'Salesforce', desc:'Exportá leads calificados directamente a Salesforce como oportunidades.', connected:false, stats:{synced:0,lastSync:'—',errors:0}, field:{label:'Token OAuth',placeholder:'sf-oauth-token',value:''} },
+    { id:'cn3', emoji:'⚡', name:'Zapier', desc:'Conectá LinkedIn Manager con +5000 apps via Zapier webhooks.', connected:true, stats:{synced:312,lastSync:'hace 12 min',errors:2}, field:{label:'Webhook URL',placeholder:'https://hooks.zapier.com/...',value:'https://hooks.zapier.com/hooks/catch/****'} },
+    { id:'cn4', emoji:'🔧', name:'Make (Integromat)', desc:'Automatizaciones avanzadas con flujos visuales en Make.', connected:true, stats:{synced:97,lastSync:'hace 1 h',errors:0}, field:{label:'Webhook URL',placeholder:'https://hook.eu1.make.com/...',value:'https://hook.eu1.make.com/****'} },
+    { id:'cn5', emoji:'📗', name:'Google Sheets', desc:'Exportá leads, campañas y métricas a hojas de cálculo automáticamente.', connected:false, stats:{synced:0,lastSync:'—',errors:0}, field:{label:'Sheet ID',placeholder:'1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms',value:''} },
+    { id:'cn6', emoji:'💬', name:'Slack', desc:'Recibí notificaciones en tiempo real de conexiones, replies y leads en Slack.', connected:true, stats:{synced:0,lastSync:'activo',errors:0}, field:{label:'Webhook URL',placeholder:'https://hooks.slack.com/services/...',value:'https://hooks.slack.com/services/T***'} },
+  ],
   scheduledPosts: [
     { id:'p1', date:'Mié 10 Abr · 09:00', type:'Thought leadership', text:'El bienestar corporativo ya no es un beneficio: es un KPI. En los últimos 12 meses vimos cómo las empresas que miden salud de colaboradores reducen rotación un 34%...' },
     { id:'p2', date:'Vie 12 Abr · 08:30', type:'Caso de éxito', text:'¿Cómo ayudamos a una empresa de 1.200 colaboradores en Chile a bajar 22% el ausentismo en 6 meses? 🧵 Un thread sobre implementación de Care Assistance...' },
@@ -609,28 +841,216 @@ function renderContent(container){
 }
 
 // ============================================
+// SKILLS VIEW
+// ============================================
+function renderSkills(container) {
+  container.innerHTML = `<div class="view">
+    <div class="view-header">
+      <div><h1 class="view-title">Habilidades</h1><p class="view-subtitle">Gestión de endorsements de skills LinkedIn · Automatización de recomendaciones</p></div>
+      <div class="view-actions">
+        <button class="btn btn-secondary" onclick="toast('Exportando reporte de skills...','info')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar</button>
+        <button class="btn btn-primary" onclick="toast('Ejecutando endorse masivo...','success')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Endorse masivo</button>
+      </div>
+    </div>
+    <div class="dash-grid" style="margin-bottom:24px">
+      <div class="skills-grid">
+        ${DATA.skills.map(s => `<div class="card skill-card">
+          <div class="skill-head">
+            <div class="skill-badge" style="background:${s.color}22;font-size:22px">${s.emoji}</div>
+            <div><div class="skill-name">${s.name}</div><div class="skill-cat">${s.cat}</div></div>
+          </div>
+          <div class="skill-bar-wrap"><div class="skill-bar" style="width:${s.progress}%;background:${s.color};color:${s.color}"></div></div>
+          <div class="skill-stats">
+            <div class="skill-stat"><strong style="color:${s.color}">${s.endorsements}</strong>Recibidos</div>
+            <div class="skill-stat"><strong>${s.given}</strong>Dados</div>
+            <div class="skill-stat"><strong style="color:var(--neon-amber)">${s.pending}</strong>Pendientes</div>
+          </div>
+          <div class="skill-actions">
+            <button class="btn btn-secondary" style="flex:1;font-size:12px" onclick="toast('Endorsando skill: ${s.name}','success')">⭐ Endorse ahora</button>
+            <button class="btn btn-ghost" style="font-size:12px" onclick="toast('Configurando automatización...','info')">Auto</button>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="endorse-queue">
+        <div class="queue-header"><div class="card-title">Cola de endorsements</div><span class="status-pill active" style="font-size:10px">Auto activo</span></div>
+        <div class="queue-list">
+          ${DATA.endorseQueue.map(q => `<div class="queue-item">
+            <div class="queue-avatar">${q.initials}</div>
+            <div class="queue-info"><div class="queue-name">${q.name}</div><div class="queue-skill">${q.skill}</div></div>
+            <span class="queue-status ${q.status}">${q.status === 'done' ? '✓ Hecho' : '⏳ Pendiente'}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================
+// CONNECTORS VIEW
+// ============================================
+function renderConnectors(container) {
+  container.innerHTML = `<div class="view">
+    <div class="view-header">
+      <div><h1 class="view-title">Conectores</h1><p class="view-subtitle">Integraciones con CRM, automatización y notificaciones</p></div>
+      <div class="view-actions">
+        <button class="btn btn-primary" onclick="toast('Sincronizando todas las integraciones...','success')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Sincronizar todo</button>
+      </div>
+    </div>
+    <div class="webhook-banner">
+      <div class="webhook-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
+      <div style="flex:1">
+        <div style="font-weight:700;margin-bottom:4px">Tu Webhook Universal</div>
+        <div style="font-size:12px;color:var(--text-2)">Usá esta URL para recibir eventos desde LinkedIn Manager en cualquier servicio externo</div>
+        <div class="webhook-url">https://linkedin-manager-api.onrender.com/api/webhook/inbound</div>
+      </div>
+      <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('https://linkedin-manager-api.onrender.com/api/webhook/inbound');toast('URL copiada al portapapeles','success')">Copiar</button>
+    </div>
+    <div class="connectors-grid">
+      ${DATA.connectors.map((c,i) => `<div class="card connector-card ${c.connected ? 'connected' : ''}">
+        <div class="connector-head">
+          <div class="connector-logo" style="background:var(--bg-3);font-size:24px">${c.emoji}</div>
+          <div><div class="connector-name">${c.name}</div><div class="connector-desc">${c.desc}</div></div>
+        </div>
+        <div class="connector-toggle">
+          <span class="toggle-label">${c.connected ? '✅ Conectado' : '⚪ Desconectado'}</span>
+          <label class="toggle-switch">
+            <input type="checkbox" ${c.connected ? 'checked' : ''} onchange="DATA.connectors[${i}].connected=this.checked;renderConnectors(document.getElementById('viewContainer'));toast(this.checked?'${c.name} conectado':'${c.name} desconectado',this.checked?'success':'info')">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="connector-field">
+          <label>${c.field.label}</label>
+          <input class="connector-input" type="password" placeholder="${c.field.placeholder}" value="${c.field.value}" onfocus="this.type='text'" onblur="this.type='password'">
+        </div>
+        ${c.connected ? `<div class="connector-stats">
+          <div class="conn-stat"><div class="conn-stat-val" style="color:var(--neon-green)">${c.stats.synced}</div><div class="conn-stat-label">Sincronizados</div></div>
+          <div class="conn-stat"><div class="conn-stat-val" style="font-size:12px;font-weight:600;color:var(--text-1)">${c.stats.lastSync}</div><div class="conn-stat-label">Último sync</div></div>
+          <div class="conn-stat"><div class="conn-stat-val" style="color:${c.stats.errors>0?'var(--neon-red)':'var(--neon-green)'}">${c.stats.errors}</div><div class="conn-stat-label">Errores</div></div>
+        </div>` : ''}
+        <button class="btn ${c.connected ? 'btn-secondary' : 'btn-primary'}" style="width:100%" onclick="toast('${c.connected ? 'Sincronizando '+c.name : 'Conectando '+c.name+'...'}','${c.connected ? 'info' : 'success'}')">${c.connected ? '🔄 Sincronizar ahora' : '🔗 Conectar'}</button>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ============================================
+// ADMIN VIEW
+// ============================================
+function renderAdmin(container) {
+  if (!AUTH.isAdmin()) { toast('Acceso denegado','info'); return; }
+  const users = AUTH.allUsers();
+  container.innerHTML = `<div class="view">
+    <div class="view-header">
+      <div><h1 class="view-title">Administración</h1><p class="view-subtitle">Gestión de usuarios y accesos · Solo administradores</p></div>
+    </div>
+    <div class="admin-grid">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">👥 Usuarios del sistema <span style="font-size:12px;color:var(--text-2);font-weight:400">(${users.length} total)</span></div>
+        <table class="users-table">
+          <thead><tr><th>Usuario</th><th>Nombre</th><th>Empresa</th><th>Rol</th><th>Alta</th><th></th></tr></thead>
+          <tbody id="usersTableBody">
+            ${users.map(u => `<tr>
+              <td><code style="font-size:12px;color:var(--neon-cyan)">${u.username}</code></td>
+              <td style="font-weight:600">${u.name}</td>
+              <td style="color:var(--text-2)">${u.company||'—'}</td>
+              <td><span class="role-badge ${u.role}">${u.role}</span></td>
+              <td style="color:var(--text-3);font-size:11px">${new Date(u.createdAt).toLocaleDateString('es-AR')}</td>
+              <td>${u.role!=='admin'?`<button class="btn btn-ghost" style="font-size:11px;color:var(--neon-red)" onclick="if(confirm('¿Eliminar a ${u.name}?')){AUTH.deleteUser('${u.id}');renderAdmin(document.getElementById('viewContainer'))}">✕ Eliminar</button>`:'<span style="color:var(--text-3);font-size:11px">Admin</span>'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="new-user-form">
+        <div class="card-title" style="margin-bottom:18px">➕ Crear nuevo usuario</div>
+        <div class="form-row"><label>Nombre completo</label><input class="form-input" id="newName" placeholder="Ana García" /></div>
+        <div class="form-row"><label>Usuario (login)</label><input class="form-input" id="newUsername" placeholder="ana.garcia" /></div>
+        <div class="form-row"><label>Empresa</label><input class="form-input" id="newCompany" placeholder="Care Assistance" /></div>
+        <div class="form-row"><label>Contraseña inicial</label><input class="form-input" id="newPassword" type="password" placeholder="Mínimo 8 caracteres" /></div>
+        <div class="form-row"><label>Rol</label><select class="form-select form-input" id="newRole"><option value="user">Usuario</option><option value="admin">Administrador</option></select></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px" id="createUserBtn">Crear usuario</button>
+        <div id="createUserMsg" style="font-size:12px;margin-top:10px;text-align:center"></div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('createUserBtn').addEventListener('click', async () => {
+    const name = document.getElementById('newName').value.trim();
+    const username = document.getElementById('newUsername').value.trim();
+    const company = document.getElementById('newCompany').value.trim();
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
+    const msg = document.getElementById('createUserMsg');
+    if (!name||!username||!password) { msg.style.color='var(--neon-red)'; msg.textContent='Completá nombre, usuario y contraseña'; return; }
+    if (password.length < 8) { msg.style.color='var(--neon-red)'; msg.textContent='La contraseña debe tener al menos 8 caracteres'; return; }
+    const res = await AUTH.createUser(name, username, password, role, company);
+    if (res.ok) {
+      msg.style.color='var(--neon-green)'; msg.textContent=`✓ Usuario "${username}" creado exitosamente`;
+      ['newName','newUsername','newCompany','newPassword'].forEach(id=>document.getElementById(id).value='');
+      setTimeout(()=>renderAdmin(container), 1200);
+    } else {
+      msg.style.color='var(--neon-red)'; msg.textContent=res.error;
+    }
+  });
+}
+
+// ============================================
 // ROUTER + BOOTSTRAP
 // ============================================
-const views = { dashboard:renderDashboard, campaigns:renderCampaigns, inbox:renderInbox, leads:renderLeads, content:renderContent };
+const views = { dashboard:renderDashboard, campaigns:renderCampaigns, inbox:renderInbox, leads:renderLeads, content:renderContent, skills:renderSkills, connectors:renderConnectors, admin:renderAdmin };
 const container = document.getElementById('viewContainer');
-const navItems = document.querySelectorAll('.nav-item');
 
 function navigate(name){
   const view=views[name];if(!view)return;
-  navItems.forEach(n=>n.classList.toggle('active',n.dataset.view===name));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===name));
   document.getElementById('sidebar').classList.remove('open');
   view(container);
   history.replaceState(null,'','#'+name);
 }
 
-navItems.forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.view)));
-document.getElementById('mobileMenuBtn')?.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
-document.getElementById('newCampaignBtn')?.addEventListener('click',()=>{navigate('campaigns');setTimeout(()=>toast('Click en "Nueva campaña" para abrir el editor','info'),400);});
-document.addEventListener('keydown',(e)=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.querySelector('.search-box input')?.focus();}});
+// Inject admin nav item if admin user
+function injectAdminNav() {
+  const nav = document.querySelector('.sidebar-nav');
+  if (!nav || !AUTH.isAdmin()) return;
+  const btn = document.createElement('button');
+  btn.className = 'nav-item';
+  btn.dataset.view = 'admin';
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span>Usuarios</span><span class="role-badge admin" style="font-size:10px">Admin</span>`;
+  btn.addEventListener('click', () => navigate('admin'));
+  nav.appendChild(btn);
+}
 
-const initial=location.hash.slice(1)||'dashboard';
-navigate(views[initial]?initial:'dashboard');
-setTimeout(()=>toast('Bienvenido de vuelta, Sebastián 👋','success',3500),600);
+// Update sidebar profile card with real session data
+function updateSidebarProfile() {
+  const user = AUTH.current();
+  if (!user) return;
+  const initials = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const el = id => document.getElementById(id);
+  if (el('sidebarAvatar')) el('sidebarAvatar').textContent = initials;
+  if (el('sidebarName')) el('sidebarName').textContent = user.name;
+  if (el('sidebarRole')) el('sidebarRole').textContent = `${user.role === 'admin' ? '⭐ Admin' : 'Usuario'} · ${user.company || 'LinkedIn Manager'}`;
+}
+
+// ── Startup ───────────────────────────────────────────────────────────────────
+(async () => {
+  await AUTH.init();
+  const session = AUTH.current();
+  if (!session) { await AUTH.showLogin(); return; }
+
+  // Wired in — setup app
+  document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.view)));
+  document.getElementById('mobileMenuBtn')?.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+  document.getElementById('newCampaignBtn')?.addEventListener('click',()=>{navigate('campaigns');setTimeout(()=>toast('Click en "Nueva campaña" para abrir el editor','info'),400);});
+  document.addEventListener('keydown',(e)=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.querySelector('.search-box input')?.focus();}});
+
+  injectAdminNav();
+  updateSidebarProfile();
+
+  const initial = location.hash.slice(1)||'dashboard';
+  navigate(views[initial]?initial:'dashboard');
+  const firstName = session.name.split(' ')[0];
+  setTimeout(()=>toast(`Bienvenido de vuelta, ${firstName} 👋`,'success',3500),600);
+})();
 </script>
 </body>
 </html>
