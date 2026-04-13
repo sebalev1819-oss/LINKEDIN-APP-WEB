@@ -8,6 +8,7 @@ import { toast, modal } from '../ui.js';
 
 // ── Automation type config ────────────────────────────────────────────────────
 const AUTO_TYPES = {
+  smart_engage: { icon: '🧠', label: 'Smart Engage', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', desc: 'Busca perfiles y posts relevantes, da like, comenta con AI y conecta automáticamente' },
   message:  { icon: '💬', label: 'Mensaje',         color: '#4f8cff', bg: 'rgba(79,140,255,0.12)'  },
   like:     { icon: '👍', label: 'Like a posts',    color: '#a855f7', bg: 'rgba(168,85,247,0.12)'  },
   comment:  { icon: '💭', label: 'Comentar',        color: '#22d3ee', bg: 'rgba(34,211,238,0.12)'  },
@@ -144,7 +145,9 @@ function openWizard(container, onCreated) {
 }
 
 function wizardHTML(step, wizard) {
-  const steps = ['Tipo', 'Audiencia', 'Horario', 'Contenido'];
+  const isSmart = wizard.type === 'smart_engage';
+  const steps = isSmart ? ['Tipo', 'Audiencia', 'Acciones', 'Horario', 'Preview'] : ['Tipo', 'Audiencia', 'Horario', 'Contenido'];
+  const totalSteps = steps.length;
   const indicator = steps.map((s, i) => `
     <div class="wiz-step ${i + 1 === step ? 'active' : i + 1 < step ? 'done' : ''}">
       <div class="wiz-step-num">${i + 1 < step ? '✓' : i + 1}</div>
@@ -183,7 +186,66 @@ function wizardHTML(step, wizard) {
           <input class="wiz-input" id="wizCountries" placeholder="ej: Argentina, Chile, México" value="${(wizard.targets.countries || []).join(', ')}">
         </div>
       </div>`;
-  } else if (step === 3) {
+  } else if (isSmart && step === 3) {
+    // Smart Engage: Actions configuration
+    const actions = wizard.smartActions || { like: true, comment: true, connect: true, message: false };
+    body = `
+      <div class="wiz-form">
+        <div class="wiz-form-group">
+          <label>Acciones automáticas al encontrar matches</label>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
+              <input type="checkbox" class="smart-action-cb" data-action="like" ${actions.like ? 'checked' : ''}> 👍 Dar like a posts relevantes
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
+              <input type="checkbox" class="smart-action-cb" data-action="comment" ${actions.comment ? 'checked' : ''}> 💭 Comentar posts con AI (Claude genera comentarios personalizados)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
+              <input type="checkbox" class="smart-action-cb" data-action="connect" ${actions.connect ? 'checked' : ''}> 🤝 Enviar solicitud de conexión (con nota AI personalizada)
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
+              <input type="checkbox" class="smart-action-cb" data-action="message" ${actions.message ? 'checked' : ''}> 💬 Enviar mensaje después de conectar
+            </label>
+          </div>
+        </div>
+        ${actions.message ? `
+        <div class="wiz-form-group">
+          <label>Plantilla de mensaje post-conexión</label>
+          <textarea class="wiz-input wiz-textarea" id="wizSmartTemplate" placeholder="Hola {{nombre}}, gracias por conectar. Trabajo en bienestar corporativo y...">${wizard.content?.template || ''}</textarea>
+          <span class="wiz-hint">Variables: {{nombre}}, {{empresa}}, {{cargo}}</span>
+        </div>` : ''}
+        <div class="wiz-form-group">
+          <label>Score mínimo para actuar</label>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <input type="range" class="wiz-range" id="wizMinScore" min="20" max="80" value="${wizard.targets?.minScore || 40}" style="flex:1;">
+            <span class="wiz-badge" id="minScoreVal">${wizard.targets?.minScore || 40}</span>
+          </div>
+          <span class="wiz-hint">Perfiles/posts con score menor serán ignorados. Mayor score = más selectivo.</span>
+        </div>
+        <div class="auto-safety-banner" style="margin-top:12px;">
+          🧠 <strong>Smart Engage usa AI</strong> para generar comentarios y notas de conexión personalizadas basadas en el contenido del post y perfil del destinatario.
+        </div>
+      </div>`;
+  } else if (isSmart && step === 5) {
+    // Smart Engage: Preview (placeholder — real preview loads after creation)
+    body = `
+      <div class="wiz-form">
+        <div class="wiz-summary">
+          <div class="wiz-summary-title">🧠 Resumen — Smart Engage</div>
+          <div class="wiz-summary-row"><span>Tipo</span><strong>🧠 Smart Engage (búsqueda + feed + AI)</strong></div>
+          <div class="wiz-summary-row"><span>Títulos target</span><strong>${(wizard.targets?.titles || []).join(', ') || 'Todos'}</strong></div>
+          <div class="wiz-summary-row"><span>Keywords</span><strong>${(wizard.targets?.keywords || []).join(', ') || 'Todos'}</strong></div>
+          <div class="wiz-summary-row"><span>Países</span><strong>${(wizard.targets?.countries || []).join(', ') || 'Todos'}</strong></div>
+          <div class="wiz-summary-row"><span>Score mínimo</span><strong>${wizard.targets?.minScore || 40} pts</strong></div>
+          <div class="wiz-summary-row"><span>Acciones</span><strong>${Object.entries(wizard.smartActions || {}).filter(([,v]) => v).map(([k]) => ({like:'👍 Like', comment:'💭 Comentario AI', connect:'🤝 Conexión', message:'💬 Mensaje'}[k])).join(', ')}</strong></div>
+          <div class="wiz-summary-row"><span>Límite diario</span><strong>${wizard.schedule?.dailyLimit || 20} acciones</strong></div>
+          <div class="wiz-summary-row"><span>Horario</span><strong>${wizard.schedule?.hours || '09:00-18:00'} · ${(wizard.schedule?.days || []).length} días</strong></div>
+        </div>
+        <div class="auto-safety-banner" style="margin-top:12px;">
+          🚀 Al lanzar, Smart Engage buscará perfiles y posts que hagan match con tus criterios cada 5 minutos y ejecutará las acciones configuradas respetando los límites.
+        </div>
+      </div>`;
+  } else if (step === (isSmart ? 4 : 3)) {
     const days = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
     const keys  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     body = `
@@ -218,7 +280,7 @@ function wizardHTML(step, wizard) {
           </div>
         </div>
       </div>`;
-  } else if (step === 4) {
+  } else if (!isSmart && step === 4) {
     const needsTemplate = ['message','comment','followup'].includes(wizard.type);
     const vars = ['{{nombre}}','{{empresa}}','{{cargo}}','{{industria}}'];
     body = `
@@ -260,7 +322,7 @@ function wizardHTML(step, wizard) {
       <div class="wizard-footer">
         ${step > 1 ? `<button class="btn btn-secondary" id="wizBack">← Atrás</button>` : '<div></div>'}
         <button class="btn btn-primary" id="wizNext">
-          ${step < 4 ? 'Continuar →' : '🚀 Lanzar automatización'}
+          ${step < totalSteps ? 'Continuar →' : (isSmart ? '🧠 Lanzar Smart Engage' : '🚀 Lanzar automatización')}
         </button>
       </div>
     </div>`;
@@ -300,7 +362,7 @@ function bindWizard(backdrop, close, render, wizard, setStep, onCreated) {
     });
   });
 
-  // Step 4 — template
+  // Step 4 — template (non-smart)
   const tmpl = backdrop.querySelector('#wizTemplate');
   if (tmpl) {
     tmpl.addEventListener('input', () => {
@@ -319,6 +381,28 @@ function bindWizard(backdrop, close, render, wizard, setStep, onCreated) {
     });
   }
 
+  // Smart Engage: actions checkboxes + minScore
+  backdrop.querySelectorAll('.smart-action-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (!wizard.smartActions) wizard.smartActions = { like: true, comment: true, connect: true, message: false };
+      wizard.smartActions[cb.dataset.action] = cb.checked;
+    });
+  });
+  const minScoreInput = backdrop.querySelector('#wizMinScore');
+  if (minScoreInput) {
+    minScoreInput.addEventListener('input', () => {
+      const v = parseInt(minScoreInput.value, 10);
+      if (!wizard.targets) wizard.targets = {};
+      wizard.targets.minScore = v;
+      const lbl = backdrop.querySelector('#minScoreVal');
+      if (lbl) lbl.textContent = v;
+    });
+  }
+  const smartTmpl = backdrop.querySelector('#wizSmartTemplate');
+  if (smartTmpl) {
+    smartTmpl.addEventListener('input', () => { wizard.content.template = smartTmpl.value; });
+  }
+
   // Back
   backdrop.querySelector('#wizBack')?.addEventListener('click', () => {
     saveStep(backdrop, wizard);
@@ -335,15 +419,20 @@ function bindWizard(backdrop, close, render, wizard, setStep, onCreated) {
     if (wizard._step === 1 && !wizard.type) {
       toast('Seleccioná un tipo de automatización', 'warning'); return;
     }
-    if (wizard._step < 4) {
+    const maxSteps = wizard.type === 'smart_engage' ? 5 : 4;
+    if (wizard._step < maxSteps) {
       wizard._step++;
       setStep(wizard._step);
       render();
     } else {
       // Launch
-      await api.createAutomation(wizard);
+      const data = { ...wizard };
+      if (wizard.type === 'smart_engage') {
+        data.targets = { ...wizard.targets, actions: wizard.smartActions || { like: true, comment: true, connect: true } };
+      }
+      await api.createAutomation(data);
       close();
-      toast('🚀 Automatización creada y activa!', 'success', 4000);
+      toast(wizard.type === 'smart_engage' ? '🧠 Smart Engage activado!' : '🚀 Automatización creada y activa!', 'success');
       onCreated();
     }
   });
@@ -359,10 +448,16 @@ function saveStep(backdrop, wizard) {
   if (industries !== undefined) wizard.targets.industries = industries.split(',').map(s => s.trim()).filter(Boolean);
   const keywords = backdrop.querySelector('#wizKeywords')?.value;
   if (keywords !== undefined) wizard.targets.keywords = keywords.split(',').map(s => s.trim()).filter(Boolean);
+  const countries = backdrop.querySelector('#wizCountries')?.value;
+  if (countries !== undefined) wizard.targets.countries = countries.split(',').map(s => s.trim()).filter(Boolean);
   const limit = backdrop.querySelector('#wizLimit')?.value;
   if (limit) wizard.schedule.dailyLimit = parseInt(limit, 10);
   const tmpl = backdrop.querySelector('#wizTemplate')?.value;
   if (tmpl !== undefined) wizard.content.template = tmpl;
+  const smartTmpl = backdrop.querySelector('#wizSmartTemplate')?.value;
+  if (smartTmpl !== undefined) wizard.content.template = smartTmpl;
+  const minScore = backdrop.querySelector('#wizMinScore')?.value;
+  if (minScore) wizard.targets.minScore = parseInt(minScore, 10);
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -399,6 +494,7 @@ export async function renderAutomations(container) {
       <!-- Filter tabs -->
       <div class="auto-filter-tabs" id="autoFilters">
         <button class="auto-tab active" data-filter="all">Todas</button>
+        <button class="auto-tab" data-filter="smart_engage">🧠 Smart Engage</button>
         <button class="auto-tab" data-filter="message">💬 Mensajes</button>
         <button class="auto-tab" data-filter="like">👍 Likes</button>
         <button class="auto-tab" data-filter="comment">💭 Comentarios</button>

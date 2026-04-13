@@ -7,6 +7,8 @@
 
 const db      = require('../db');
 const li      = require('./linkedin');
+const matcher = require('./matcher');
+const ai      = require('./ai-comments');
 const { v4: uuid } = require('uuid');
 
 const DELAY_MIN = parseInt(process.env.ACTION_DELAY_MIN || '2000', 10);
@@ -226,6 +228,90 @@ async function runAutomations() {
           } else {
             console.log(`[Automations] ${auto.name}: sin profileUrls configuradas, saltando`);
           }
+          break;
+        }
+
+        case 'smart_engage': {
+          // Smart Engage: search + feed scrape + match + auto-act
+          console.log(`[Automations] Smart Engage: searching profiles and scanning feed`);
+          const batchLimit = Math.min(remaining, 10);
+          let smartActions = 0;
+
+          // Search profiles
+          const searchResult = await li.searchProfiles(auto.acc_id, auto.acc_cookie, target, 10);
+          const rankedProfiles = matcher.filterAndRankProfiles(searchResult.profiles || [], target, target.minScore || 40);
+
+          // Scrape feed
+          const feedResult = await li.scrapeRelevantFeedPosts(auto.acc_id, auto.acc_cookie, target.keywords || [], 8);
+          const rankedPosts = matcher.filterAndRankPosts(feedResult.posts || [], target, 30);
+
+          // Process top profiles: view + connect
+          for (const profile of rankedProfiles.slice(0, 5)) {
+            if (smartActions >= batchLimit) break;
+
+            const existing = db.prepare('SELECT * FROM discovered_profiles WHERE profile_url = ?').get(profile.profileUrl);
+            if (!existing) {
+              db.prepare(`INSERT OR IGNORE INTO discovered_profiles (id, name, headline, profile_url, location, match_score, source, status, automation_id, discovered_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'search', 'new', ?, DATETIME('now'))`)
+                .run(uuid(), profile.name, profile.headline, profile.profileUrl, profile.location || '', profile.matchScore, auto.id);
+            }
+
+            if (!existing || existing.status === 'new') {
+              enqueue({
+                type: JobType.VIEW_PROFILE,
+                accountId: auto.acc_id,
+                cookie: auto.acc_cookie,
+                automationId: auto.id,
+                data: { profileUrl: profile.profileUrl, contactName: profile.name, actionLabel: `Smart: perfil visitado (${profile.matchScore}pts)` },
+              });
+              smartActions++;
+              db.prepare("UPDATE discovered_profiles SET status='viewed', last_action='view', last_action_at=DATETIME('now') WHERE profile_url=?").run(profile.profileUrl);
+            }
+
+            if (profile.matchScore >= 60 && smartActions < batchLimit) {
+              const note = await ai.generateConnectionNote({ name: profile.name, headline: profile.headline });
+              enqueue({
+                type: JobType.CONNECTION_REQUEST,
+                accountId: auto.acc_id,
+                cookie: auto.acc_cookie,
+                automationId: auto.id,
+                data: { profileUrl: profile.profileUrl, note, contactName: profile.name, actionLabel: `Smart: conexión (${profile.matchScore}pts)` },
+              });
+              smartActions++;
+              db.prepare("UPDATE discovered_profiles SET status='contacted', last_action='connect', last_action_at=DATETIME('now') WHERE profile_url=?").run(profile.profileUrl);
+            }
+          }
+
+          // Process top posts: like + comment
+          for (const post of rankedPosts.slice(0, 5)) {
+            if (smartActions >= batchLimit) break;
+
+            if (post.postUrl) {
+              enqueue({
+                type: JobType.LIKE_POST,
+                accountId: auto.acc_id,
+                cookie: auto.acc_cookie,
+                automationId: auto.id,
+                data: { postUrl: post.postUrl, contactName: post.author?.name, actionLabel: `Smart: like (${post.matchScore}pts)` },
+              });
+              smartActions++;
+            }
+
+            if (post.matchScore >= 60 && post.postUrl && smartActions < batchLimit) {
+              const comment = await ai.generateComment({ postText: post.postText, authorName: post.author?.name, authorHeadline: post.author?.headline });
+              enqueue({
+                type: JobType.COMMENT_POST,
+                accountId: auto.acc_id,
+                cookie: auto.acc_cookie,
+                automationId: auto.id,
+                data: { postUrl: post.postUrl, comment, contactName: post.author?.name, actionLabel: `Smart: comentario AI (${post.matchScore}pts)` },
+              });
+              smartActions++;
+            }
+          }
+
+          logAutoAction(auto, 'smart_engage', `Descubiertos: ${rankedProfiles.length} perfiles, ${rankedPosts.length} posts`, 'success');
+          console.log(`[Automations] Smart Engage: ${smartActions} actions queued`);
           break;
         }
 

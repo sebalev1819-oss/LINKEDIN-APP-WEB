@@ -9,6 +9,8 @@ const { v4: uuid } = require('uuid');
 const db = require('../db');
 const queue = require('../services/queue');
 const li   = require('../services/linkedin');
+const matcher = require('../services/matcher');
+const ai     = require('../services/ai-comments');
 
 // GET /api/automations
 router.get('/', (req, res) => {
@@ -48,7 +50,7 @@ router.get('/log', (req, res) => {
 router.post('/', (req, res) => {
   const { type, targets, schedule, content } = req.body;
 
-  const validTypes = ['message', 'like', 'comment', 'followup', 'view', 'endorse', 'connection'];
+  const validTypes = ['message', 'like', 'comment', 'followup', 'view', 'endorse', 'connection', 'smart_engage'];
   if (type && !validTypes.includes(type)) {
     return res.status(400).json({ error: `Tipo inválido: ${type}. Válidos: ${validTypes.join(', ')}` });
   }
@@ -270,7 +272,7 @@ router.put('/:id', (req, res) => {
   if (!a) return res.status(404).json({ error: 'Automatización no encontrada' });
 
   const { name, type, targets, content, schedule } = req.body;
-  const validTypes = ['message', 'like', 'comment', 'followup', 'view', 'endorse', 'connection'];
+  const validTypes = ['message', 'like', 'comment', 'followup', 'view', 'endorse', 'connection', 'smart_engage'];
   if (type && !validTypes.includes(type)) {
     return res.status(400).json({ error: `Tipo inválido: ${type}` });
   }
@@ -293,6 +295,248 @@ router.put('/:id', (req, res) => {
   );
 
   res.json(formatAuto(db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id)));
+});
+
+// ── Smart Engage Endpoints ───────────────────────────────────────────────────
+
+// POST /api/automations/search-preview — Preview search results without acting
+router.post('/search-preview', async (req, res) => {
+  const { criteria } = req.body;
+  if (!criteria) return res.status(400).json({ error: 'criteria requerido' });
+
+  const account = db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
+  if (!account) return res.status(400).json({ error: 'No hay cuentas conectadas' });
+
+  try {
+    // Search profiles and scrape feed in parallel
+    const [searchResult, feedResult] = await Promise.all([
+      li.searchProfiles(account.id, account.cookie, criteria, 20),
+      li.scrapeRelevantFeedPosts(account.id, account.cookie, criteria.keywords || [], 10),
+    ]);
+
+    // Score and rank results
+    const rankedProfiles = matcher.filterAndRankProfiles(searchResult.profiles || [], criteria, criteria.minScore || 30);
+    const rankedPosts = matcher.filterAndRankPosts(feedResult.posts || [], criteria, criteria.minScore || 20);
+
+    res.json({
+      ok: true,
+      profiles: rankedProfiles,
+      feedPosts: rankedPosts,
+      summary: {
+        profilesFound: searchResult.profiles?.length || 0,
+        profilesMatched: rankedProfiles.length,
+        postsFound: feedResult.posts?.length || 0,
+        postsMatched: rankedPosts.length,
+        aiAvailable: ai.isAIAvailable(),
+      },
+    });
+  } catch (err) {
+    console.error('[SmartEngage] search-preview error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// POST /api/automations/smart-run — Execute smart engage cycle
+router.post('/smart-run', async (req, res) => {
+  const { automationId, criteria, actions } = req.body;
+
+  // Get criteria from automation or request body
+  let targetCriteria = criteria;
+  let autoRecord = null;
+
+  if (automationId) {
+    autoRecord = db.prepare('SELECT * FROM automations WHERE id = ?').get(automationId);
+    if (!autoRecord) return res.status(404).json({ error: 'Automatización no encontrada' });
+    try { targetCriteria = JSON.parse(autoRecord.target || '{}'); } catch { targetCriteria = {}; }
+  }
+
+  if (!targetCriteria) return res.status(400).json({ error: 'criteria o automationId requerido' });
+
+  const account = db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
+  if (!account) return res.status(400).json({ error: 'No hay cuentas conectadas' });
+
+  const enabledActions = actions || ['like', 'comment', 'connect'];
+  const MAX_ACTIONS = 20;
+  let actionCount = 0;
+  const results = { liked: 0, commented: 0, connected: 0, viewed: 0, discovered: 0 };
+
+  try {
+    // 1. Search profiles
+    const searchResult = await li.searchProfiles(account.id, account.cookie, targetCriteria, 15);
+    const rankedProfiles = matcher.filterAndRankProfiles(searchResult.profiles || [], targetCriteria, targetCriteria.minScore || 40);
+
+    // 2. Scrape feed
+    const feedResult = await li.scrapeRelevantFeedPosts(account.id, account.cookie, targetCriteria.keywords || [], 10);
+    const rankedPosts = matcher.filterAndRankPosts(feedResult.posts || [], targetCriteria, 30);
+
+    // 3. Process profiles — view + connect
+    for (const profile of rankedProfiles) {
+      if (actionCount >= MAX_ACTIONS) break;
+
+      // Check if already discovered
+      const existing = db.prepare('SELECT * FROM discovered_profiles WHERE profile_url = ?').get(profile.profileUrl);
+
+      if (!existing) {
+        // Save to discovered_profiles
+        db.prepare(`
+          INSERT OR IGNORE INTO discovered_profiles (id, name, headline, profile_url, location, match_score, source, status, automation_id, discovered_at)
+          VALUES (?, ?, ?, ?, ?, ?, 'search', 'new', ?, DATETIME('now'))
+        `).run(uuid(), profile.name, profile.headline, profile.profileUrl, profile.location, profile.matchScore, automationId || null);
+        results.discovered++;
+      }
+
+      const profileStatus = existing?.status || 'new';
+
+      // View profile if new
+      if (profileStatus === 'new' && actionCount < MAX_ACTIONS) {
+        queue.enqueue({
+          type: queue.JobType.VIEW_PROFILE,
+          accountId: account.id,
+          cookie: account.cookie,
+          automationId: automationId || null,
+          data: {
+            profileUrl: profile.profileUrl,
+            contactName: profile.name,
+            contactCompany: profile.headline,
+            actionLabel: `Perfil visitado (score ${profile.matchScore})`,
+          },
+        });
+        actionCount++;
+        results.viewed++;
+
+        // Update status
+        db.prepare("UPDATE discovered_profiles SET status = 'viewed', last_action = 'view', last_action_at = DATETIME('now') WHERE profile_url = ?").run(profile.profileUrl);
+      }
+
+      // Send connection request if high score and enabled
+      if (enabledActions.includes('connect') && profile.matchScore >= 60 && profileStatus !== 'connected' && actionCount < MAX_ACTIONS) {
+        const note = await ai.generateConnectionNote({
+          name: profile.name,
+          headline: profile.headline,
+          context: `Match score ${profile.matchScore} — ${targetCriteria.keywords?.join(', ') || 'búsqueda de perfiles'}`,
+        });
+
+        queue.enqueue({
+          type: queue.JobType.CONNECTION_REQUEST,
+          accountId: account.id,
+          cookie: account.cookie,
+          automationId: automationId || null,
+          data: {
+            profileUrl: profile.profileUrl,
+            note,
+            contactName: profile.name,
+            contactCompany: profile.headline,
+            actionLabel: `Conexión enviada (score ${profile.matchScore})`,
+          },
+        });
+        actionCount++;
+        results.connected++;
+
+        db.prepare("UPDATE discovered_profiles SET status = 'contacted', last_action = 'connect', last_action_at = DATETIME('now') WHERE profile_url = ?").run(profile.profileUrl);
+      }
+    }
+
+    // 4. Process feed posts — like + comment
+    for (const post of rankedPosts) {
+      if (actionCount >= MAX_ACTIONS) break;
+
+      // Like post
+      if (enabledActions.includes('like') && post.postUrl && actionCount < MAX_ACTIONS) {
+        queue.enqueue({
+          type: queue.JobType.LIKE_POST,
+          accountId: account.id,
+          cookie: account.cookie,
+          automationId: automationId || null,
+          data: {
+            postUrl: post.postUrl,
+            contactName: post.author?.name || '',
+            contactCompany: post.author?.headline || '',
+            actionLabel: `Like a post (score ${post.matchScore})`,
+          },
+        });
+        actionCount++;
+        results.liked++;
+      }
+
+      // Comment on high-score posts
+      if (enabledActions.includes('comment') && post.matchScore >= 60 && post.postUrl && actionCount < MAX_ACTIONS) {
+        const comment = await ai.generateComment({
+          postText: post.postText,
+          authorName: post.author?.name || '',
+          authorHeadline: post.author?.headline || '',
+        });
+
+        queue.enqueue({
+          type: queue.JobType.COMMENT_POST,
+          accountId: account.id,
+          cookie: account.cookie,
+          automationId: automationId || null,
+          data: {
+            postUrl: post.postUrl,
+            comment,
+            contactName: post.author?.name || '',
+            contactCompany: post.author?.headline || '',
+            actionLabel: `Comentario AI (score ${post.matchScore})`,
+          },
+        });
+        actionCount++;
+        results.commented++;
+      }
+
+      // Connect with post author if not already connected
+      if (enabledActions.includes('connect') && post.author?.profileUrl && post.matchScore >= 50 && actionCount < MAX_ACTIONS) {
+        const existingProfile = db.prepare('SELECT * FROM discovered_profiles WHERE profile_url = ?').get(post.author.profileUrl);
+        if (!existingProfile) {
+          db.prepare(`
+            INSERT OR IGNORE INTO discovered_profiles (id, name, headline, profile_url, match_score, source, status, automation_id, discovered_at)
+            VALUES (?, ?, ?, ?, ?, 'feed', 'new', ?, DATETIME('now'))
+          `).run(uuid(), post.author.name, post.author.headline, post.author.profileUrl, post.matchScore, automationId || null);
+          results.discovered++;
+        }
+      }
+    }
+
+    // Update automation stats
+    if (automationId) {
+      db.prepare(`UPDATE automations SET last_run = DATETIME('now') WHERE id = ?`).run(automationId);
+    }
+
+    console.log(`[SmartEngage] Run complete: ${JSON.stringify(results)}`);
+    res.json({ ok: true, results, totalActions: actionCount });
+  } catch (err) {
+    console.error('[SmartEngage] smart-run error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// GET /api/discovered — List discovered profiles
+router.get('/discovered', (req, res) => {
+  const { status, minScore, limit } = req.query;
+  let query = 'SELECT * FROM discovered_profiles';
+  const params = [];
+  const where = [];
+
+  if (status) { where.push('status = ?'); params.push(status); }
+  if (minScore) { where.push('match_score >= ?'); params.push(parseInt(minScore)); }
+  if (where.length) query += ' WHERE ' + where.join(' AND ');
+
+  query += ' ORDER BY match_score DESC, discovered_at DESC';
+  query += ` LIMIT ${parseInt(limit) || 50}`;
+
+  const rows = db.prepare(query).all(...params);
+  res.json(rows.map(r => ({
+    id: r.id,
+    name: r.name,
+    headline: r.headline,
+    profileUrl: r.profile_url,
+    location: r.location,
+    matchScore: r.match_score,
+    source: r.source,
+    status: r.status,
+    discoveredAt: r.discovered_at,
+    lastAction: r.last_action,
+    lastActionAt: r.last_action_at,
+  })));
 });
 
 // DELETE /api/automations/:id
@@ -329,13 +573,14 @@ function formatAuto(a) {
 
 function labelForType(type) {
   const labels = {
-    message:    'Mensaje',
-    like:       'Me Gusta',
-    comment:    'Comentar posts',
-    followup:   'Follow-up',
-    view:       'Ver perfiles',
-    endorse:    'Endorsar skills',
-    connection: 'Solicitudes de conexión',
+    message:       'Mensaje',
+    like:          'Me Gusta',
+    comment:       'Comentar posts',
+    followup:      'Follow-up',
+    view:          'Ver perfiles',
+    endorse:       'Endorsar skills',
+    connection:    'Solicitudes de conexión',
+    smart_engage:  'Smart Engage',
   };
   return labels[type] || 'Automatización';
 }

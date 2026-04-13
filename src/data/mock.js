@@ -208,6 +208,19 @@ export const calendarDays = (() => {
 // ── Automations ───────────────────────────────────────────────────────────────
 export const automations = [
   {
+    id: 'a0',
+    name: 'Smart Engage — HR Directors LATAM',
+    type: 'smart_engage',
+    status: 'active',
+    trigger: 'cron_5min',
+    triggerLabel: 'Cada 5 min · Busca + actúa automáticamente',
+    target: { titles: ['HR Director', 'People Manager', 'CHRO'], keywords: ['bienestar', 'wellness', 'RRHH', 'salud laboral'], industries: ['Healthcare', 'Corporate'], countries: ['Argentina', 'Chile', 'México'], minScore: 40, actions: { like: true, comment: true, connect: true, message: false } },
+    content: {},
+    schedule: { dailyLimit: 20, hours: '09:00-18:00', days: ['Mon','Tue','Wed','Thu','Fri'] },
+    stats: { actionsToday: 14, total: 456, successRate: 92 },
+    lastRun: 'Hace 5 min',
+  },
+  {
     id: 'a1',
     name: 'Bienvenida a nuevas conexiones HR',
     type: 'message',
@@ -288,10 +301,10 @@ export const automations = [
 ];
 
 export const automationStats = {
-  active: 4,
-  actionsToday: 63,
+  active: 5,
+  actionsToday: 77,
   messagesSent: 11,
-  successRate: 96,
+  successRate: 95,
 };
 
 export const automationLog = [
