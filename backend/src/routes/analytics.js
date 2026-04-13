@@ -16,11 +16,34 @@ router.get('/metrics', (req, res) => {
   const leads        = db.prepare("SELECT COUNT(*) as cnt FROM leads").get()?.cnt || 0;
   const profileViews = db.prepare("SELECT COUNT(*) as cnt FROM automation_log WHERE type='view_profile' AND result='success'").get()?.cnt || 0;
 
+  // Build 7-day trend from automation_log
+  const buildTrend = (type) => {
+    const rows = db.prepare(`
+      SELECT DATE(created_at) as d, COUNT(*) as cnt FROM automation_log
+      WHERE type = ? AND result='success' AND created_at >= DATETIME('now', '-7 days')
+      GROUP BY DATE(created_at) ORDER BY d
+    `).all(type);
+    const trend = new Array(7).fill(0);
+    rows.forEach(r => {
+      const dayIdx = Math.max(0, 6 - Math.floor((Date.now() - new Date(r.d).getTime()) / 86400000));
+      if (dayIdx >= 0 && dayIdx < 7) trend[dayIdx] = r.cnt;
+    });
+    return trend;
+  };
+
+  // Calculate delta (% change vs previous 7 days)
+  const calcDelta = (type) => {
+    const thisWeek = db.prepare(`SELECT COUNT(*) as cnt FROM automation_log WHERE type=? AND result='success' AND created_at >= DATETIME('now', '-7 days')`).get(type)?.cnt || 0;
+    const lastWeek = db.prepare(`SELECT COUNT(*) as cnt FROM automation_log WHERE type=? AND result='success' AND created_at >= DATETIME('now', '-14 days') AND created_at < DATETIME('now', '-7 days')`).get(type)?.cnt || 0;
+    if (lastWeek === 0) return thisWeek > 0 ? 100 : 0;
+    return Math.round(((thisWeek - lastWeek) / lastWeek) * 100 * 10) / 10;
+  };
+
   res.json({
-    connections:  { value: connections + 4827,  delta: 12.4, trend: [30,42,38,55,60,72,85], goal: 5000  },
-    messages:     { value: messages + 312,      delta: 8.1,  trend: [15,22,18,28,35,30,42], goal: 400   },
-    profileViews: { value: profileViews + 1249, delta: -2.3, trend: [60,58,62,55,50,48,52], goal: 1500  },
-    leads:        { value: leads + 87,          delta: 23.5, trend: [5,8,12,15,18,22,28],   goal: 100   },
+    connections:  { value: connections,  delta: calcDelta('connection_request'), trend: buildTrend('connection_request'), goal: 500 },
+    messages:     { value: messages,     delta: calcDelta('send_message'),       trend: buildTrend('send_message'),       goal: 200 },
+    profileViews: { value: profileViews, delta: calcDelta('view_profile'),       trend: buildTrend('view_profile'),       goal: 500 },
+    leads:        { value: leads,        delta: calcDelta('lead'),              trend: buildTrend('lead'),               goal: 50  },
   });
 });
 
@@ -46,7 +69,7 @@ router.get('/activity', (req, res) => {
   const rows = db.prepare('SELECT * FROM activity ORDER BY created_at DESC LIMIT 20').all();
   if (!rows.length) {
     return res.json([
-      { id: '1', icon: '🤝', type: 'connection', text: 'Nueva conexión aceptada — María González, HR Director @ Santander', time: 'Hace 12 min' },
+      { id: '1', icon: '🤝', type: 'connection', text: 'Nueva conexión aceptada: María González, HR Director @ Santander', time: 'Hace 12 min' },
       { id: '2', icon: '💬', type: 'message',    text: 'Respuesta de Diego Fuentes: "Interesante propuesta, coordinemos..."', time: 'Hace 34 min' },
       { id: '3', icon: '👍', type: 'like',       text: 'Tu post generó 23 likes en la primera hora', time: 'Hace 1 h' },
     ]);
@@ -86,6 +109,14 @@ router.post('/campaigns/:id/toggle', (req, res) => {
   res.json({ ok: true, status: ns });
 });
 
+// DELETE /api/campaigns/:id
+router.delete('/campaigns/:id', (req, res) => {
+  const c = db.prepare('SELECT * FROM campaigns WHERE id = ?').get(req.params.id);
+  if (!c) return res.status(404).json({ error: 'Not found' });
+  db.prepare('DELETE FROM campaigns WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ── Leads ───────────────────────────────────────────────────────────────
 // Frontend expects Kanban shape: { new:[], contacted:[], proposal:[], won:[] }
 router.get('/leads', (req, res) => {
@@ -122,8 +153,16 @@ router.get('/leads', (req, res) => {
 
 router.post('/leads/:id/move', (req, res) => {
   const { to } = req.body;             // frontend sends { from, to }
+  const validStages = ['new', 'contacted', 'proposal', 'won'];
   if (!to) return res.status(400).json({ error: 'stage (to) requerido' });
+  if (!validStages.includes(to)) return res.status(400).json({ error: `Stage inválido: ${to}. Válidos: ${validStages.join(', ')}` });
   db.prepare('UPDATE leads SET stage = ? WHERE id = ?').run(to, req.params.id);
+  res.json({ ok: true });
+});
+
+// POST /api/threads/:id/read — mark thread as read
+router.post('/threads/:id/read', (req, res) => {
+  db.prepare('UPDATE threads SET unread = 0 WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });
 

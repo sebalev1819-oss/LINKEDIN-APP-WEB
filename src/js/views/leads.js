@@ -1,5 +1,5 @@
 import * as api from '../services/api.js';
-import { toast } from '../ui.js';
+import { toast, escapeHtml } from '../ui.js';
 
 const columns = [
   { key: 'new', title: 'Nuevos', cls: 'col-new' },
@@ -25,8 +25,8 @@ function leadCard(lead) {
       <div class="lead-head">
         <div class="lead-avatar">${lead.initials}</div>
         <div style="flex:1;min-width:0;">
-          <div class="lead-name">${lead.name}</div>
-          <div class="lead-company">${lead.company}</div>
+          <div class="lead-name">${escapeHtml(lead.name)}</div>
+          <div class="lead-company">${escapeHtml(lead.company)}</div>
         </div>
       </div>
       <div class="lead-tags">

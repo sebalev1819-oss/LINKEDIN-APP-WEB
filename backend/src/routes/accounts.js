@@ -39,6 +39,14 @@ router.post('/connect', async (req, res) => {
   if (!cookie || cookie.length < 50) {
     return res.status(400).json({ error: 'Cookie li_at inválida o demasiado corta' });
   }
+  if (!/^AQE/.test(cookie)) {
+    return res.status(400).json({ error: 'La cookie li_at debe empezar con "AQE". Verificá que copiaste el valor correcto.' });
+  }
+  // Check for duplicate cookie
+  const existing = db.prepare('SELECT id, name FROM accounts WHERE cookie = ?').get(cookie);
+  if (existing) {
+    return res.status(409).json({ error: `Esta cookie ya está asociada a la cuenta "${existing.name}"` });
+  }
 
   try {
     // Validate session with real LinkedIn

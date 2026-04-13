@@ -39,6 +39,9 @@ router.post('/', async (req, res) => {
   if (!text?.trim()) {
     return res.status(400).json({ error: 'El texto del post no puede estar vacío' });
   }
+  if (text.length > 3000) {
+    return res.status(400).json({ error: 'El texto no puede superar 3000 caracteres' });
+  }
 
   const id = uuid();
   const acc = accountId ? db.prepare('SELECT * FROM accounts WHERE id = ?').get(accountId) : null;
@@ -77,6 +80,36 @@ router.post('/', async (req, res) => {
 
   const created = db.prepare('SELECT p.*, a.name as acc_name FROM posts p LEFT JOIN accounts a ON a.id = p.account_id WHERE p.id = ?').get(id);
   res.json(formatPost(created));
+});
+
+// PUT /api/posts/:id — edit draft post
+router.put('/:id', (req, res) => {
+  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+  if (!post) return res.status(404).json({ error: 'Post no encontrado' });
+  if (post.status === 'published') return res.status(400).json({ error: 'No se puede editar un post ya publicado' });
+
+  const { text, type, hashtags, scheduledAt } = req.body;
+  if (text !== undefined && (!text.trim() || text.length > 3000)) {
+    return res.status(400).json({ error: 'El texto debe tener entre 1 y 3000 caracteres' });
+  }
+
+  db.prepare(`
+    UPDATE posts SET
+      text = COALESCE(?, text),
+      type = COALESCE(?, type),
+      hashtags = COALESCE(?, hashtags),
+      scheduled_at = COALESCE(?, scheduled_at),
+      status = CASE WHEN ? IS NOT NULL THEN 'scheduled' ELSE status END
+    WHERE id = ?
+  `).run(
+    text || null, type || null,
+    hashtags ? JSON.stringify(hashtags) : null,
+    scheduledAt || null, scheduledAt || null,
+    req.params.id,
+  );
+
+  const updated = db.prepare('SELECT p.*, a.name as acc_name FROM posts p LEFT JOIN accounts a ON a.id = p.account_id WHERE p.id = ?').get(req.params.id);
+  res.json(formatPost(updated));
 });
 
 // DELETE /api/posts/:id

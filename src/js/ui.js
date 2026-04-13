@@ -1,5 +1,16 @@
 // Shared UI helpers
 
+/**
+ * Escape HTML entities to prevent XSS when inserting user/API data into innerHTML.
+ */
+export function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+/** Standardized toast durations by type */
+const TOAST_DURATION = { success: 3000, info: 3000, warning: 4000, error: 5000 };
+
 const icons = {
   success: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
   info: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#4f8cff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
@@ -16,7 +27,8 @@ function dismissToast(el) {
   setTimeout(() => el.remove(), 220);
 }
 
-export function toast(message, type = 'info', duration = 3000) {
+export function toast(message, type = 'info', duration) {
+  duration = duration ?? TOAST_DURATION[type] ?? 3000;
   const container = document.getElementById('toastContainer');
   if (!container) return;
 

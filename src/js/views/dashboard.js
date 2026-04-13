@@ -3,7 +3,7 @@
  * LinkedIn Manager — Dashboard (Command Center)
  */
 import * as api from '../services/api.js';
-import { animateCount, toast } from '../ui.js';
+import { animateCount, toast, escapeHtml } from '../ui.js';
 import { sparkline, buildLineChart, SERIES_CONFIG } from '../charts.js';
 
 // ── Date / greeting helpers ───────────────────────────────────────────────────
@@ -30,7 +30,7 @@ function computeInsights(metrics, campaigns, leads) {
       (b.stats.replies / b.stats.sent) > (a.stats.replies / a.stats.sent) ? b : a
     );
     const rate = Math.round((best.stats.replies / best.stats.sent) * 100);
-    out.push({ icon: '🔥', text: `Campaña <strong>${best.name}</strong> tiene <strong>${rate}% de reply rate</strong> — tu mejor resultado activo.` });
+    out.push({ icon: '🔥', text: `Campaña <strong>${escapeHtml(best.name)}</strong> tiene <strong>${rate}% de reply rate</strong> — tu mejor resultado activo.` });
   }
 
   // Hot leads without follow-up
@@ -60,14 +60,15 @@ function computeInsights(metrics, campaigns, leads) {
 }
 
 // ── Brief banner ──────────────────────────────────────────────────────────────
-function renderBrief(insights) {
+function renderBrief(insights, userName) {
+  const initials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'U';
   return `
     <div class="brief-banner">
       <div class="brief-header">
         <div class="brief-greeting">
-          <div class="brief-avatar">SL</div>
+          <div class="brief-avatar">${initials}</div>
           <div>
-            <div class="brief-greeting-text">${greeting()}, <strong>Sebastián</strong></div>
+            <div class="brief-greeting-text">${greeting()}, <strong>${escapeHtml(userName)}</strong></div>
             <div class="brief-date">${todayLabel()}</div>
           </div>
         </div>
@@ -131,7 +132,7 @@ function miniCampaignCard(c) {
   const rateColor = rate >= 20 ? 'var(--neon-green)' : rate >= 10 ? 'var(--neon-amber)' : 'var(--text-3)';
   return `
     <div class="mini-campaign-card">
-      <div class="mini-campaign-name">${c.name}</div>
+      <div class="mini-campaign-name">${escapeHtml(c.name)}</div>
       <div class="mini-campaign-stats">
         <span class="mini-stat"><span class="mini-stat-val">${c.stats.sent}</span> enviadas</span>
         <span class="mini-stat"><span class="mini-stat-val" style="color:${rateColor};">${rate}%</span> reply</span>
@@ -155,10 +156,10 @@ const ACTIVITY_TYPES = {
 function activityItem(a) {
   const cfg = ACTIVITY_TYPES[a.type] || ACTIVITY_TYPES.connection;
   return `
-    <div class="activity-item" data-type="${a.type || ''}">
-      <div class="activity-icon">${a.icon}</div>
+    <div class="activity-item" data-type="${escapeHtml(a.type || '')}">
+      <div class="activity-icon">${escapeHtml(a.icon)}</div>
       <div class="activity-body">
-        <div class="activity-text">${a.text}</div>
+        <div class="activity-text">${escapeHtml(a.text)}</div>
         <div class="activity-meta">
           <span class="activity-time">${a.time}</span>
           <span class="activity-type-pill" style="--pill-color:${cfg.color};">${cfg.label}</span>
@@ -237,19 +238,23 @@ export async function renderDashboard(container) {
     </div>`;
 
   // Fetch all data in parallel
-  const [metrics, chartsByRange, activity, campaigns, leads] = await Promise.all([
+  const [metrics, chartsByRange, activity, campaigns, leads, accounts] = await Promise.all([
     api.getMetrics(),
     api.getChartData(),
     api.getActivity(),
     api.getCampaigns(),
     api.getLeads(),
+    api.getAccounts().catch(() => []),
   ]);
+
+  // Resolve user name from connected accounts (fallback to generic)
+  const userName = accounts?.[0]?.name?.split(' ')[0] || 'Usuario';
 
   // ── Brief banner ──
   const briefEl = container.querySelector('.brief-banner');
   if (briefEl) {
     const insights = computeInsights(metrics, campaigns, leads);
-    briefEl.outerHTML = renderBrief(insights);
+    briefEl.outerHTML = renderBrief(insights, userName);
   }
 
   // ── Metrics grid ──
@@ -305,10 +310,16 @@ export async function renderDashboard(container) {
   container.querySelector('#activityList').innerHTML = activity.map(activityItem).join('');
   container.querySelector('#activityList')?.addEventListener('click', e => {
     const btn = e.target.closest('.activity-cta');
-    if (btn) toast(`${btn.title} — próximamente disponible`, 'info');
+    if (!btn) return;
+    const item = btn.closest('.activity-item');
+    const type = item?.dataset.type;
+    // Navigate to the relevant view
+    const viewMap = { connection: 'leads', message: 'inbox', view: 'leads', campaign: 'campaigns', post: 'content' };
+    const target = viewMap[type] || 'leads';
+    document.querySelector(`[data-view="${target}"]`)?.click();
   });
   container.querySelector('#activityViewAll')?.addEventListener('click', () =>
-    toast('Vista completa de actividad próximamente', 'info'));
+    document.querySelector('[data-view="inbox"]')?.click());
 
   // ── Active campaigns section ──
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
@@ -333,7 +344,32 @@ export async function renderDashboard(container) {
     });
   }
 
-  // ── Export btn ──
-  container.querySelector('#exportBtn')?.addEventListener('click', () =>
-    toast('Exportación de datos próximamente 📥', 'info'));
+  // ── Export btn — CSV download ──
+  container.querySelector('#exportBtn')?.addEventListener('click', () => {
+    try {
+      // Build CSV from leads + campaigns
+      const allLeads = [...(leads.new || []), ...(leads.contacted || []), ...(leads.proposal || []), ...(leads.won || [])];
+      if (!allLeads.length) { toast('No hay datos para exportar', 'warning'); return; }
+
+      const header = 'Nombre,Empresa,Score,Etapa,Tags';
+      const rows = allLeads.map(l => {
+        const stage = (leads.new || []).includes(l) ? 'Nuevo' :
+                      (leads.contacted || []).includes(l) ? 'Contactado' :
+                      (leads.proposal || []).includes(l) ? 'Propuesta' : 'Cerrado';
+        return `"${(l.name || '').replace(/"/g, '""')}","${(l.company || '').replace(/"/g, '""')}",${l.score},"${stage}","${(l.tags || []).join(', ')}"`;
+      });
+
+      const csv = '\uFEFF' + [header, ...rows].join('\n'); // BOM for Excel UTF-8
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `linkedin-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Leads exportados a CSV', 'success');
+    } catch (err) {
+      toast('Error al exportar: ' + err.message, 'error');
+    }
+  });
 }

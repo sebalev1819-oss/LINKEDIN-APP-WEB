@@ -168,7 +168,15 @@ async function runAutomations() {
   }
 
   for (const auto of automations) {
-    const schedule = JSON.parse(auto.schedule || '{}');
+    let schedule, target, content;
+    try {
+      schedule = JSON.parse(auto.schedule || '{}');
+      target   = JSON.parse(auto.target   || '{}');
+      content  = JSON.parse(auto.content  || '{}');
+    } catch (parseErr) {
+      console.error(`[Automations] JSON parse error in ${auto.name}:`, parseErr.message);
+      continue;
+    }
     const dailyLimit = schedule.dailyLimit || 10;
 
     if (auto.actions_today >= dailyLimit) {
@@ -177,8 +185,6 @@ async function runAutomations() {
     }
 
     const remaining = dailyLimit - auto.actions_today;
-    const target  = JSON.parse(auto.target  || '{}');
-    const content = JSON.parse(auto.content || '{}');
 
     console.log(`[Automations] Ejecutando: ${auto.name} (tipo: ${auto.type}, restantes hoy: ${remaining})`);
 

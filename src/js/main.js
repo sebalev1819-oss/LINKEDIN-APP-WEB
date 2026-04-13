@@ -66,12 +66,14 @@ function hideLoading() {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 let currentView = null;
+let isNavigating = false;
 
 async function navigate(viewName) {
-  if (viewName === currentView) return;
+  if (viewName === currentView || isNavigating) return;
   const view = views[viewName];
   if (!view) return;
 
+  isNavigating = true;
   currentView = viewName;
 
   // Update nav state
@@ -103,6 +105,7 @@ async function navigate(viewName) {
     });
   } finally {
     hideLoading();
+    isNavigating = false;
   }
 }
 
@@ -134,13 +137,22 @@ document.addEventListener('keydown', (e) => {
 const initial = location.hash.slice(1) || 'dashboard';
 navigate(views[initial] ? initial : 'dashboard');
 
-// Welcome toast
-setTimeout(() => toast('Bienvenido de vuelta, Sebastián 👋', 'success', 4000), 800);
+// Welcome toast — uses first connected account name or generic
+import { getAccounts } from './services/api.js';
+getAccounts().then(accs => {
+  const name = accs?.[0]?.name?.split(' ')[0] || 'Usuario';
+  toast(`Bienvenido de vuelta, ${name}`, 'success');
+}).catch(() => toast('Bienvenido de vuelta', 'success'));
 
-// ── Backend status indicator ──────────────────────────────────────────────────
+// ── Backend status indicator with exponential backoff ─────────────────────────
 const statusEl   = document.getElementById('backendStatus');
 const statusDot  = statusEl?.querySelector('.backend-dot');
 const statusLbl  = statusEl?.querySelector('.backend-label');
+
+let healthFailures = 0;
+let healthInterval = 30_000;
+let healthTimer = null;
+let wasLive = null; // track transitions
 
 async function checkBackendStatus() {
   try {
@@ -148,19 +160,39 @@ async function checkBackendStatus() {
       signal: AbortSignal.timeout(2000),
     });
     if (r.ok) {
+      // Went from offline → online
+      if (wasLive === false) {
+        toast('Backend reconectado', 'success');
+      }
+      wasLive = true;
+      healthFailures = 0;
+      healthInterval = 30_000;
       statusEl?.classList.add('live');
       statusEl?.classList.remove('mock');
       if (statusDot)  statusDot.style.background = 'var(--neon-green)';
       if (statusLbl)  statusLbl.textContent = 'Backend ON';
     } else throw new Error('not ok');
   } catch {
+    // Went from online → offline
+    if (wasLive !== false) {
+      toast('Modo demo — backend no disponible', 'warning');
+    }
+    wasLive = false;
+    healthFailures++;
     statusEl?.classList.add('mock');
     statusEl?.classList.remove('live');
     if (statusDot)  statusDot.style.background = 'var(--neon-amber)';
     if (statusLbl)  statusLbl.textContent = 'Modo demo';
+
+    // Exponential backoff: 30s → 60s → 120s (max)
+    if (healthFailures >= 3) {
+      healthInterval = Math.min(healthInterval * 2, 120_000);
+    }
   }
+
+  // Schedule next check
+  clearTimeout(healthTimer);
+  healthTimer = setTimeout(checkBackendStatus, healthInterval);
 }
 
-// Check on load and every 30 seconds
 checkBackendStatus();
-setInterval(checkBackendStatus, 30_000);

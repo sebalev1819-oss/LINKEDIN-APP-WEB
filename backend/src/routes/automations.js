@@ -47,6 +47,12 @@ router.get('/log', (req, res) => {
 // POST /api/automations
 router.post('/', (req, res) => {
   const { type, targets, schedule, content } = req.body;
+
+  const validTypes = ['message', 'like', 'comment', 'followup', 'view', 'endorse', 'connection'];
+  if (type && !validTypes.includes(type)) {
+    return res.status(400).json({ error: `Tipo inválido: ${type}. Válidos: ${validTypes.join(', ')}` });
+  }
+
   const id   = uuid();
   const name = `${labelForType(type)} — nueva regla`;
 
@@ -85,9 +91,15 @@ router.post('/:id/run', async (req, res) => {
     return res.json({ ok: false, error: 'No hay cuentas de LinkedIn conectadas' });
   }
 
-  const target  = JSON.parse(a.target  || '{}');
-  const content = JSON.parse(a.content || '{}');
-  const schedule = JSON.parse(a.schedule || '{}');
+  let target, content, schedule;
+  try {
+    target   = JSON.parse(a.target  || '{}');
+    content  = JSON.parse(a.content || '{}');
+    schedule = JSON.parse(a.schedule || '{}');
+  } catch (parseErr) {
+    console.error('[AutoRun] JSON parse error:', parseErr.message);
+    return res.status(500).json({ ok: false, error: 'Datos de automatización corruptos — verificá target/content/schedule' });
+  }
   const batchSize = Math.min(schedule.dailyLimit || 5, 5);
 
   try {
@@ -252,6 +264,37 @@ router.post('/run-action', async (req, res) => {
   }
 });
 
+// PUT /api/automations/:id — update automation rule
+router.put('/:id', (req, res) => {
+  const a = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id);
+  if (!a) return res.status(404).json({ error: 'Automatización no encontrada' });
+
+  const { name, type, targets, content, schedule } = req.body;
+  const validTypes = ['message', 'like', 'comment', 'followup', 'view', 'endorse', 'connection'];
+  if (type && !validTypes.includes(type)) {
+    return res.status(400).json({ error: `Tipo inválido: ${type}` });
+  }
+
+  db.prepare(`
+    UPDATE automations SET
+      name = COALESCE(?, name),
+      type = COALESCE(?, type),
+      target = COALESCE(?, target),
+      content = COALESCE(?, content),
+      schedule = COALESCE(?, schedule)
+    WHERE id = ?
+  `).run(
+    name || null,
+    type || null,
+    targets ? JSON.stringify(targets) : null,
+    content ? JSON.stringify(content) : null,
+    schedule ? JSON.stringify(schedule) : null,
+    req.params.id,
+  );
+
+  res.json(formatAuto(db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id)));
+});
+
 // DELETE /api/automations/:id
 router.delete('/:id', (req, res) => {
   db.prepare('DELETE FROM automations WHERE id = ?').run(req.params.id);
@@ -298,9 +341,11 @@ function labelForType(type) {
 }
 
 function calculateSuccessRate() {
-  const total   = db.prepare("SELECT COUNT(*) as cnt FROM automation_log").get()?.cnt || 0;
-  const success = db.prepare("SELECT COUNT(*) as cnt FROM automation_log WHERE result='success'").get()?.cnt || 0;
-  return total > 0 ? Math.round((success / total) * 100) : 100;
+  try {
+    const total   = db.prepare("SELECT COUNT(*) as cnt FROM automation_log WHERE created_at >= DATETIME('now', '-30 days')").get()?.cnt || 0;
+    const success = db.prepare("SELECT COUNT(*) as cnt FROM automation_log WHERE result='success' AND created_at >= DATETIME('now', '-30 days')").get()?.cnt || 0;
+    return total > 0 ? Math.round((success / total) * 100) : 100;
+  } catch { return 100; }
 }
 
 function relativeTime(isoStr) {
