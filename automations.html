@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Automatizaciones — LinkedIn Manager</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#07080c;color:#e2e4f0;min-height:100vh;padding:24px}
+    h1{font-size:22px;font-weight:800;margin-bottom:4px}
+    .subtitle{font-size:13px;color:#666;margin-bottom:28px}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:28px}
+
+    .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;transition:border-color .2s}
+    .card:hover{border-color:rgba(255,255,255,0.15)}
+
+    .card-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .card-title{font-size:15px;font-weight:700}
+    .card-desc{font-size:12px;color:#666;margin-top:2px}
+
+    .icon-like{background:rgba(59,130,246,0.15)}
+    .icon-post{background:rgba(139,92,246,0.15)}
+    .icon-comment{background:rgba(234,179,8,0.15)}
+    .icon-connect{background:rgba(16,185,129,0.15)}
+
+    label{display:block;font-size:12px;font-weight:600;color:#888;margin-bottom:6px;margin-top:14px}
+    input,textarea,select{width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#e2e4f0;font-size:13px;font-family:inherit;transition:border-color .2s}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,0.1)}
+    textarea{resize:vertical;min-height:70px}
+    select option{background:#1a1b2e}
+
+    .btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:11px;margin-top:16px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s}
+    .btn-like{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;box-shadow:0 0 16px rgba(59,130,246,0.25)}
+    .btn-post{background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;box-shadow:0 0 16px rgba(139,92,246,0.25)}
+    .btn-comment{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;box-shadow:0 0 16px rgba(234,179,8,0.2)}
+    .btn-connect{background:linear-gradient(135deg,#059669,#10b981);color:#fff;box-shadow:0 0 16px rgba(16,185,129,0.25)}
+    .btn:hover{opacity:.85;transform:translateY(-1px)}
+    .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+    .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .result{display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:12px;line-height:1.6}
+    .result--ok{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#34d399}
+    .result--err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171}
+
+    .status-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;margin-bottom:24px;font-size:13px}
+    .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .dot-green{background:#10b981;box-shadow:0 0 6px #10b981}
+    .dot-red{background:#ef4444}
+    .dot-yellow{background:#f59e0b;animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+    .log-panel{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;margin-top:24px}
+    .log-title{font-size:13px;font-weight:700;color:#888;margin-bottom:12px}
+    .log-entries{height:160px;overflow-y:auto;font-family:monospace;font-size:11px;line-height:1.8}
+    .log-entry{padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .log-time{color:#555;margin-right:8px}
+    .log-ok{color:#10b981}
+    .log-err{color:#f87171}
+    .log-info{color:#60a5fa}
+
+    .nav{display:flex;gap:8px;margin-bottom:24px}
+    .nav a{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;color:#888;border:1px solid rgba(255,255,255,0.07);transition:all .2s}
+    .nav a:hover,.nav a.active{background:rgba(14,165,233,0.1);border-color:rgba(14,165,233,0.3);color:#0ea5e9}
+
+    .hint{font-size:11px;color:#555;margin-top:4px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;background:rgba(16,185,129,0.15);color:#10b981;margin-left:8px}
+  </style>
+</head>
+<body>
+
+<div style="max-width:960px;margin:0 auto">
+
+  <div class="nav">
+    <a href="/">Dashboard</a>
+    <a href="/connect.html">Conectar cuenta</a>
+    <a href="/automations.html" class="active">Automatizaciones</a>
+  </div>
+
+  <h1>⚡ Automatizaciones LinkedIn</h1>
+  <p class="subtitle">Ejecutá acciones reales en LinkedIn usando tu cuenta conectada · Playwright</p>
+
+  <div class="status-bar" id="statusBar">
+    <div class="dot dot-yellow" id="statusDot"></div>
+    <span id="statusText">Verificando backend...</span>
+  </div>
+
+  <div class="grid">
+
+    <!-- LIKE POSTS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-like">👍</div>
+        <div>
+          <div class="card-title">Dar Likes</div>
+          <div class="card-desc">Like en posts del feed o URL específica</div>
+        </div>
+      </div>
+
+      <label>Cuenta de LinkedIn</label>
+      <select id="like-account"></select>
+
+      <label>Tipo de like</label>
+      <select id="like-type">
+        <option value="feed">Feed (automático, N posts)</option>
+        <option value="url">URL específica de post</option>
+      </select>
+
+      <div id="like-url-wrap" style="display:none">
+        <label>URL del post</label>
+        <input id="like-url" type="url" placeholder="https://www.linkedin.com/posts/..."/>
+      </div>
+
+      <div id="like-count-wrap">
+        <label>Cantidad de likes <span class="badge">máx 20/día</span></label>
+        <input id="like-count" type="number" value="5" min="1" max="20"/>
+        <p class="hint">LinkedIn detecta patrones — recomendamos máx 10/día</p>
+      </div>
+
+      <button class="btn btn-like" id="btn-like" onclick="runLike()">
+        <span id="btn-like-txt">👍 Dar Likes ahora</span>
+      </button>
+      <div class="result" id="res-like"></div>
+    </div>
+
+    <!-- PUBLICAR POST -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-post">✍️</div>
+        <div>
+          <div class="card-title">Publicar Post</div>
+          <div class="card-desc">Publica contenido en tu perfil de LinkedIn</div>
+        </div>
+      </div>
+
+      <label>Cuenta de LinkedIn</label>
+      <select id="post-account"></select>
+
+      <label>Contenido del post</label>
+      <textarea id="post-text" rows="5" placeholder="Escribe tu post aquí...
+
+Podés usar saltos de línea y emojis 🚀
+
+#hashtags #LinkedIn"></textarea>
+      <p class="hint">Máx recomendado: 1-2 posts por día para evitar restricciones</p>
+
+      <button class="btn btn-post" id="btn-post" onclick="runPost()">
+        <span id="btn-post-txt">✍️ Publicar en LinkedIn</span>
+      </button>
+      <div class="result" id="res-post"></div>
+    </div>
+
+    <!-- COMENTAR -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-comment">💬</div>
+        <div>
+          <div class="card-title">Comentar Post</div>
+          <div class="card-desc">Deja un comentario en un post específico</div>
+        </div>
+      </div>
+
+      <label>Cuenta de LinkedIn</label>
+      <select id="comment-account"></select>
+
+      <label>URL del post</label>
+      <input id="comment-url" type="url" placeholder="https://www.linkedin.com/posts/..."/>
+
+      <label>Comentario</label>
+      <textarea id="comment-text" rows="3" placeholder="Excelente contenido! Muy valioso para el sector..."></textarea>
+      <p class="hint">Usá comentarios genuinos para mejor engagement</p>
+
+      <button class="btn btn-comment" id="btn-comment" onclick="runComment()">
+        <span id="btn-comment-txt">💬 Comentar ahora</span>
+      </button>
+      <div class="result" id="res-comment"></div>
+    </div>
+
+    <!-- CONECTAR -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-connect">🤝</div>
+        <div>
+          <div class="card-title">Conectar con usuario</div>
+          <div class="card-desc">Envía solicitud de conexión con nota opcional</div>
+        </div>
+      </div>
+
+      <label>Cuenta de LinkedIn</label>
+      <select id="connect-account"></select>
+
+      <label>URL del perfil a conectar</label>
+      <input id="connect-url" type="url" placeholder="https://www.linkedin.com/in/nombre-apellido/"/>
+
+      <label>Nota personalizada <span style="color:#555;font-weight:400">(opcional, máx 300 caracteres)</span></label>
+      <textarea id="connect-note" rows="3" placeholder="Hola {nombre}, vi tu perfil y me gustaría conectar. Trabajo en..."></textarea>
+      <p class="hint">Las notas personalizadas aumentan la tasa de aceptación</p>
+
+      <button class="btn btn-connect" id="btn-connect" onclick="runConnect()">
+        <span id="btn-connect-txt">🤝 Enviar solicitud</span>
+      </button>
+      <div class="result" id="res-connect"></div>
+    </div>
+
+  </div>
+
+  <!-- Log -->
+  <div class="log-panel">
+    <div class="log-title">🟢 Log de actividad</div>
+    <div class="log-entries" id="logEntries">
+      <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-info">Esperando acciones...</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let accounts = [];
+
+// ── Status check ─────────────────────────────────────────────────────────────
+async function checkStatus() {
+  try {
+    const r = await fetch(API + '/health', { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    if (d.automationsReady) {
+      dot.className = 'dot dot-green';
+      txt.textContent = 'Backend conectado · Playwright listo · ' + d.activeAccounts + ' cuenta(s) activa(s)';
+    } else {
+      dot.className = 'dot dot-yellow';
+      txt.textContent = 'Backend conectado pero Playwright no disponible';
+    }
+  } catch {
+    document.getElementById('statusDot').className = 'dot dot-red';
+    document.getElementById('statusText').textContent = 'Backend no disponible — corré "node server.js" en la terminal';
+  }
+}
+
+// ── Load accounts ─────────────────────────────────────────────────────────────
+async function loadAccounts() {
+  try {
+    const r = await fetch(API + '/accounts');
+    accounts = await r.json();
+    const selects = ['like-account','post-account','comment-account','connect-account'];
+    selects.forEach(id => {
+      const sel = document.getElementById(id);
+      if (!accounts.length) {
+        sel.innerHTML = '<option value="">— Sin cuentas — ir a /connect.html</option>';
+      } else {
+        sel.innerHTML = accounts.map(a =>
+          '<option value="' + a.id + '">' + a.name + (a.status === 'active' ? ' ✅' : ' ⚠️') + '</option>'
+        ).join('');
+      }
+    });
+  } catch(e) {
+    console.error('loadAccounts:', e);
+  }
+}
+
+// ── Like type toggle ─────────────────────────────────────────────────────────
+document.getElementById('like-type').addEventListener('change', function() {
+  const isFeed = this.value === 'feed';
+  document.getElementById('like-url-wrap').style.display = isFeed ? 'none' : 'block';
+  document.getElementById('like-count-wrap').style.display = isFeed ? 'block' : 'none';
+});
+
+// ── Log helper ───────────────────────────────────────────────────────────────
+function addLog(msg, type) {
+  const el = document.getElementById('logEntries');
+  const now = new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const cls = type === 'ok' ? 'log-ok' : type === 'err' ? 'log-err' : 'log-info';
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = '<span class="log-time">' + now + '</span><span class="' + cls + '">' + msg + '</span>';
+  el.insertBefore(entry, el.firstChild);
+}
+
+function showResult(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.className = 'result ' + (ok ? 'result--ok' : 'result--err');
+  el.textContent = msg;
+}
+
+function setLoading(btnId, txtId, loading, originalTxt) {
+  const btn = document.getElementById(btnId);
+  const txt = document.getElementById(txtId);
+  btn.disabled = loading;
+  if (loading) {
+    txt.innerHTML = '<div class="spinner"></div> Ejecutando en LinkedIn...';
+  } else {
+    txt.textContent = originalTxt;
+  }
+}
+
+// ── Run Like ─────────────────────────────────────────────────────────────────
+async function runLike() {
+  const accountId = document.getElementById('like-account').value;
+  const type = document.getElementById('like-type').value;
+  if (!accountId) { showResult('res-like', 'Primero conectá una cuenta en /connect.html', false); return; }
+
+  setLoading('btn-like', 'btn-like-txt', true, '');
+  addLog('Iniciando likes en LinkedIn... (puede tardar 30-60 seg)', 'info');
+
+  try {
+    let body;
+    if (type === 'feed') {
+      const limit = parseInt(document.getElementById('like-count').value) || 5;
+      body = { accountId, action: 'likeFromFeed', limit };
+    } else {
+      const url = document.getElementById('like-url').value.trim();
+      if (!url) { showResult('res-like', 'Ingresá la URL del post', false); return; }
+      body = { accountId, action: 'likePost', postUrl: url };
+    }
+
+    const r = await fetch(API + '/automations/run-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+
+    if (d.ok || d.liked >= 0) {
+      const msg = d.liked !== undefined ? '✅ ' + d.liked + ' likes dados en el feed' : '✅ Like dado exitosamente';
+      showResult('res-like', msg, true);
+      addLog(msg, 'ok');
+    } else {
+      showResult('res-like', '❌ ' + (d.error || 'Error desconocido'), false);
+      addLog('Error like: ' + d.error, 'err');
+    }
+  } catch(e) {
+    showResult('res-like', '❌ ' + e.message, false);
+    addLog('Error: ' + e.message, 'err');
+  } finally {
+    setLoading('btn-like', 'btn-like-txt', false, '👍 Dar Likes ahora');
+  }
+}
+
+// ── Run Post ─────────────────────────────────────────────────────────────────
+async function runPost() {
+  const accountId = document.getElementById('post-account').value;
+  const text = document.getElementById('post-text').value.trim();
+  if (!accountId) { showResult('res-post', 'Primero conectá una cuenta en /connect.html', false); return; }
+  if (!text || text.length < 10) { showResult('res-post', 'El post necesita al menos 10 caracteres', false); return; }
+
+  setLoading('btn-post', 'btn-post-txt', true, '');
+  addLog('Publicando post en LinkedIn... (puede tardar 30-60 seg)', 'info');
+
+  try {
+    const r = await fetch(API + '/automations/run-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId, action: 'publishPost', text })
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      showResult('res-post', '✅ Post publicado exitosamente en LinkedIn', true);
+      addLog('✅ Post publicado', 'ok');
+      document.getElementById('post-text').value = '';
+    } else {
+      showResult('res-post', '❌ ' + (d.error || 'Error al publicar'), false);
+      addLog('Error post: ' + d.error, 'err');
+    }
+  } catch(e) {
+    showResult('res-post', '❌ ' + e.message, false);
+    addLog('Error: ' + e.message, 'err');
+  } finally {
+    setLoading('btn-post', 'btn-post-txt', false, '✍️ Publicar en LinkedIn');
+  }
+}
+
+// ── Run Comment ───────────────────────────────────────────────────────────────
+async function runComment() {
+  const accountId = document.getElementById('comment-account').value;
+  const postUrl = document.getElementById('comment-url').value.trim();
+  const commentText = document.getElementById('comment-text').value.trim();
+  if (!accountId) { showResult('res-comment', 'Primero conectá una cuenta en /connect.html', false); return; }
+  if (!postUrl) { showResult('res-comment', 'Ingresá la URL del post', false); return; }
+  if (!commentText) { showResult('res-comment', 'Escribí un comentario', false); return; }
+
+  setLoading('btn-comment', 'btn-comment-txt', true, '');
+  addLog('Comentando post en LinkedIn... (puede tardar 30-60 seg)', 'info');
+
+  try {
+    const r = await fetch(API + '/automations/run-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId, action: 'commentPost', postUrl, text: commentText })
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      showResult('res-comment', '✅ Comentario publicado exitosamente', true);
+      addLog('✅ Comentario en: ' + postUrl.slice(0,50), 'ok');
+      document.getElementById('comment-text').value = '';
+    } else {
+      showResult('res-comment', '❌ ' + (d.error || 'Error al comentar'), false);
+      addLog('Error comentario: ' + d.error, 'err');
+    }
+  } catch(e) {
+    showResult('res-comment', '❌ ' + e.message, false);
+    addLog('Error: ' + e.message, 'err');
+  } finally {
+    setLoading('btn-comment', 'btn-comment-txt', false, '💬 Comentar ahora');
+  }
+}
+
+// ── Run Connect ───────────────────────────────────────────────────────────────
+async function runConnect() {
+  const accountId = document.getElementById('connect-account').value;
+  const profileUrl = document.getElementById('connect-url').value.trim();
+  const note = document.getElementById('connect-note').value.trim();
+  if (!accountId) { showResult('res-connect', 'Primero conectá una cuenta en /connect.html', false); return; }
+  if (!profileUrl || !profileUrl.includes('linkedin.com/in/')) { showResult('res-connect', 'Ingresá una URL de perfil válida (linkedin.com/in/...)', false); return; }
+
+  setLoading('btn-connect', 'btn-connect-txt', true, '');
+  addLog('Enviando solicitud de conexión a: ' + profileUrl.split('/in/')[1]?.replace(/\//g,''), 'info');
+
+  try {
+    const r = await fetch(API + '/automations/run-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId, action: 'sendConnectionRequest', profileUrl, note })
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      showResult('res-connect', '✅ Solicitud de conexión enviada exitosamente', true);
+      addLog('✅ Conexión enviada a: ' + profileUrl.split('/in/')[1]?.replace(/\//g,''), 'ok');
+      document.getElementById('connect-url').value = '';
+    } else {
+      showResult('res-connect', '❌ ' + (d.error || 'Error al conectar'), false);
+      addLog('Error conexión: ' + d.error, 'err');
+    }
+  } catch(e) {
+    showResult('res-connect', '❌ ' + e.message, false);
+    addLog('Error: ' + e.message, 'err');
+  } finally {
+    setLoading('btn-connect', 'btn-connect-txt', false, '🤝 Enviar solicitud');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+checkStatus();
+loadAccounts();
+setInterval(checkStatus, 30000);
+</script>
+</body>
+</html>
