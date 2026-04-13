@@ -1,689 +1,619 @@
 /**
  * src/js/views/automations.js
- * LinkedIn Manager — Automatizaciones
- * Manage LinkedIn automation rules: messages, likes, comments, follow-ups, etc.
+ * Vista completa de Automatizaciones — LinkedIn Manager
+ * Tipos: like, comment, message, connection, view, followup, endorse
  */
-import * as api from '../services/api.js';
-import { toast, modal } from '../ui.js';
 
-// ── Automation type config ────────────────────────────────────────────────────
-const AUTO_TYPES = {
-  message:  { icon: '💬', label: 'Mensaje',         color: '#4f8cff', bg: 'rgba(79,140,255,0.12)'  },
-  like:     { icon: '👍', label: 'Like a posts',    color: '#a855f7', bg: 'rgba(168,85,247,0.12)'  },
-  comment:  { icon: '💭', label: 'Comentar',        color: '#22d3ee', bg: 'rgba(34,211,238,0.12)'  },
-  followup: { icon: '🔄', label: 'Follow-up',       color: '#34d399', bg: 'rgba(52,211,153,0.12)'  },
-  view:     { icon: '👀', label: 'Ver perfil',      color: '#f472b6', bg: 'rgba(244,114,182,0.12)' },
-  endorse:  { icon: '⭐', label: 'Endorsar skill',  color: '#fbbf24', bg: 'rgba(251,191,36,0.12)'  },
-};
+import { API } from '../services/api.js';
 
-const STATUS_CFG = {
-  active:  { label: 'Activa',  cls: 'active'  },
-  paused:  { label: 'Pausada', cls: 'paused'  },
-  draft:   { label: 'Borrador',cls: 'draft'   },
-  done:    { label: 'Completa',cls: 'active'  },
-};
+// ── Config de tipos ────────────────────────────────────────────────────────────
+const AUTO_TYPES = [
+  {
+    key: 'like',
+    icon: '👍',
+    label: 'Me Gusta',
+    desc: 'Da like automáticamente a posts del feed de LinkedIn',
+    color: '#0ea5e9',
+    hasContent: false,
+    targetMode: 'feed',
+  },
+  {
+    key: 'comment',
+    icon: '💬',
+    label: 'Comentar',
+    desc: 'Comenta posts con texto personalizado',
+    color: '#8b5cf6',
+    hasContent: true,
+    contentLabel: 'Texto del comentario',
+    contentPlaceholder: 'Excelente contenido, muy valioso para el sector! 🙌',
+    targetMode: 'urls',
+  },
+  {
+    key: 'message',
+    icon: '✉️',
+    label: 'Mensaje Directo',
+    desc: 'Envía mensajes personalizados a perfiles',
+    color: '#10b981',
+    hasContent: true,
+    contentLabel: 'Plantilla del mensaje',
+    contentPlaceholder: 'Hola {nombre}, vi tu perfil y me interesa conectar. ¿Tienes 15 min esta semana?',
+    targetMode: 'urls',
+  },
+  {
+    key: 'connection',
+    icon: '🤝',
+    label: 'Conectar',
+    desc: 'Envía solicitudes de conexión con nota opcional',
+    color: '#f59e0b',
+    hasContent: true,
+    contentLabel: 'Nota de conexión (opcional, máx 300 caracteres)',
+    contentPlaceholder: 'Hola {nombre}, me interesa lo que hacen en {empresa}. Me gustaría conectar.',
+    targetMode: 'urls',
+  },
+  {
+    key: 'view',
+    icon: '👁️',
+    label: 'Ver Perfiles',
+    desc: 'Visita perfiles para generar visibilidad y notificaciones',
+    color: '#ec4899',
+    hasContent: false,
+    targetMode: 'urls',
+  },
+  {
+    key: 'followup',
+    icon: '🔄',
+    label: 'Follow-up',
+    desc: 'Envía mensajes de seguimiento a contactos previos',
+    color: '#14b8a6',
+    hasContent: true,
+    contentLabel: 'Mensaje de seguimiento',
+    contentPlaceholder: 'Hola {nombre}, quería retomar nuestro contacto. ¿Cómo va todo?',
+    targetMode: 'urls',
+  },
+  {
+    key: 'endorse',
+    icon: '⭐',
+    label: 'Endorse Skills',
+    desc: 'Avala habilidades de tus contactos automáticamente',
+    color: '#f97316',
+    hasContent: false,
+    targetMode: 'urls',
+  },
+];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function pct(value, limit) {
-  return limit ? Math.min(Math.round((value / limit) * 100), 100) : 0;
+// Wizard state
+let wizardStep = 1;
+let wizardData = { type: null, targets: [], content: '', dailyLimit: 20, schedule: 'all' };
+let automations = [];
+let logEntries = [];
+let refreshInterval = null;
+
+// ── Render principal ───────────────────────────────────────────────────────────
+export async function renderAutomations(container) {
+  container.innerHTML = buildShell();
+  attachShellEvents();
+  await loadData();
+  startAutoRefresh();
 }
 
-function safetyColor(p) {
-  return p >= 85 ? 'var(--neon-red)' : p >= 60 ? 'var(--neon-amber)' : 'var(--neon-green)';
-}
-
-// ── Automation card ───────────────────────────────────────────────────────────
-function autoCard(a) {
-  const type   = AUTO_TYPES[a.type]  || AUTO_TYPES.message;
-  const status = STATUS_CFG[a.status] || STATUS_CFG.paused;
-  const used   = pct(a.stats.actionsToday, a.schedule.dailyLimit);
+function buildShell() {
   return `
-    <div class="auto-card" data-id="${a.id}">
-      <div class="auto-card-head">
-        <div class="auto-type-icon" style="background:${type.bg};color:${type.color};">${type.icon}</div>
-        <div class="auto-card-info">
-          <div class="auto-name">${a.name}</div>
-          <div class="auto-trigger">
-            <span class="auto-trigger-icon">⚡</span> ${a.triggerLabel}
+    <div class="auto-page">
+      <!-- Header -->
+      <div class="auto-header">
+        <div>
+          <h1 class="auto-title">
+            <span class="auto-title-icon">⚡</span>
+            Automatizaciones
+          </h1>
+          <p class="auto-subtitle">Engagement automático en LinkedIn · activas 24/7</p>
+        </div>
+        <button class="btn btn-primary btn-lg" id="newAutoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva Automatización
+        </button>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="auto-stats" id="autoStats">
+        <div class="auto-stat-card">
+          <div class="auto-stat-icon" style="background:rgba(14,165,233,0.15);color:#0ea5e9">⚡</div>
+          <div>
+            <div class="auto-stat-value" id="statActive">—</div>
+            <div class="auto-stat-label">Activas</div>
           </div>
         </div>
-        <div class="auto-head-right">
-          <span class="status-pill ${status.cls}">${status.label}</span>
-          <label class="toggle-switch" title="${a.status === 'active' ? 'Pausar' : 'Activar'}">
-            <input type="checkbox" class="auto-toggle" data-id="${a.id}" ${a.status === 'active' ? 'checked' : ''}>
-            <span class="toggle-track"></span>
+        <div class="auto-stat-card">
+          <div class="auto-stat-icon" style="background:rgba(16,185,129,0.15);color:#10b981">📊</div>
+          <div>
+            <div class="auto-stat-value" id="statToday">—</div>
+            <div class="auto-stat-label">Acciones hoy</div>
+          </div>
+        </div>
+        <div class="auto-stat-card">
+          <div class="auto-stat-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6">💬</div>
+          <div>
+            <div class="auto-stat-value" id="statMsgs">—</div>
+            <div class="auto-stat-label">Mensajes enviados</div>
+          </div>
+        </div>
+        <div class="auto-stat-card">
+          <div class="auto-stat-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">🎯</div>
+          <div>
+            <div class="auto-stat-value" id="statRate">—</div>
+            <div class="auto-stat-label">Tasa de éxito</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Automations list -->
+      <div class="auto-section">
+        <h2 class="auto-section-title">Reglas configuradas</h2>
+        <div class="auto-list" id="autoList">
+          <div class="auto-loading">
+            <div class="spinner"></div>
+            <span>Cargando automatizaciones...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live activity log -->
+      <div class="auto-section">
+        <div class="auto-log-header">
+          <h2 class="auto-section-title">Actividad reciente</h2>
+          <span class="live-badge">● LIVE</span>
+        </div>
+        <div class="auto-log" id="autoLog">
+          <div class="auto-loading"><div class="spinner"></div><span>Cargando log...</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal wizard -->
+    <div class="modal-overlay" id="autoModal" style="display:none">
+      <div class="modal-box modal-lg" id="autoModalBox">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title">Nueva Automatización</h2>
+            <div class="wizard-steps" id="wizardSteps">
+              <span class="wizard-step active" data-step="1">1. Tipo</span>
+              <span class="wizard-sep">›</span>
+              <span class="wizard-step" data-step="2">2. Targets</span>
+              <span class="wizard-sep">›</span>
+              <span class="wizard-step" data-step="3">3. Contenido</span>
+              <span class="wizard-sep">›</span>
+              <span class="wizard-step" data-step="4">4. Horario</span>
+            </div>
+          </div>
+          <button class="modal-close" id="closeAutoModal">✕</button>
+        </div>
+        <div class="modal-body" id="wizardBody">
+          <!-- injected per step -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="wizardBack" style="display:none">← Atrás</button>
+          <button class="btn btn-primary" id="wizardNext">Siguiente →</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Shell events ───────────────────────────────────────────────────────────────
+function attachShellEvents() {
+  document.getElementById('newAutoBtn').addEventListener('click', openWizard);
+  document.getElementById('closeAutoModal').addEventListener('click', closeWizard);
+  document.getElementById('wizardNext').addEventListener('click', wizardNext);
+  document.getElementById('wizardBack').addEventListener('click', wizardPrev);
+
+  document.getElementById('autoModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('autoModal')) closeWizard();
+  });
+}
+
+// ── Data load ──────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const [stats, autos, log] = await Promise.all([
+      API.get('/api/automations/stats').catch(() => ({})),
+      API.get('/api/automations').catch(() => []),
+      API.get('/api/automations/log').catch(() => []),
+    ]);
+    renderStats(stats);
+    automations = Array.isArray(autos) ? autos : [];
+    logEntries = Array.isArray(log) ? log : [];
+    renderAutomationList();
+    renderLog();
+  } catch (err) {
+    console.error('[Automations] loadData error:', err);
+    renderAutomationList();
+    renderLog();
+  }
+}
+
+function startAutoRefresh() {
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(async () => {
+    try {
+      const [stats, log] = await Promise.all([
+        API.get('/api/automations/stats').catch(() => null),
+        API.get('/api/automations/log').catch(() => null),
+      ]);
+      if (stats) renderStats(stats);
+      if (log) { logEntries = log; renderLog(); }
+    } catch {}
+  }, 15000);
+}
+
+// ── Render stats ───────────────────────────────────────────────────────────────
+function renderStats(s) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('statActive', s.active ?? '—');
+  set('statToday', s.actionsToday ?? '—');
+  set('statMsgs', s.messagesSent ?? '—');
+  set('statRate', s.successRate != null ? \`\${s.successRate}%\` : '—');
+}
+
+// ── Render automation list ─────────────────────────────────────────────────────
+function renderAutomationList() {
+  const el = document.getElementById('autoList');
+  if (!el) return;
+
+  if (!automations.length) {
+    el.innerHTML = \`
+      <div class="auto-empty">
+        <div class="auto-empty-icon">⚡</div>
+        <h3>No hay automatizaciones configuradas</h3>
+        <p>Creá tu primera regla de engagement automático en LinkedIn</p>
+        <button class="btn btn-primary" id="emptyNewAutoBtn">+ Nueva Automatización</button>
+      </div>\`;
+    document.getElementById('emptyNewAutoBtn')?.addEventListener('click', openWizard);
+    return;
+  }
+
+  el.innerHTML = automations.map(a => buildAutoCard(a)).join('');
+
+  el.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => toggleAuto(btn.dataset.toggle));
+  });
+  el.querySelectorAll('[data-run]').forEach(btn => {
+    btn.addEventListener('click', () => runAutoNow(btn.dataset.run));
+  });
+  el.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => deleteAuto(btn.dataset.delete));
+  });
+}
+
+buildAutoCard(a) {
+  const typeInfo = AUTO_TYPES.find(t => t.key === a.type) || { icon: '⚙️', label: a.type, color: '#6b7280' };
+  const isActive = a.status === 'active';
+  const pct = a.stats?.successRate || 0;
+
+  return \`
+    <div class="auto-card \${isActive ? 'auto-card--active' : 'auto-card--paused'}\">
+      <div class="auto-card-left">
+        <div class="auto-type-badge" style="background:\${typeInfo.color}22;color:\${typeInfo.color};border:1px solid \${typeInfo.color}44">
+          \${typeInfo.icon} \${typeInfo.label}
+        </div>
+        <h3 class="auto-card-name">\${escHtml(a.name)}</h3>
+        <div class="auto-card-meta">
+          <span class="auto-card-status \${isActive ? 'status--active' : 'status--paused'}\">
+            \${isActive ? '● Activa' : '⏸ Pausada'}
+          </span>
+          <span class="auto-card-lastrun">Última ejecución: \${a.lastRun || 'Nunca'}</span>
+        </div>
+      </div>
+
+      <div class="auto-card-stats">
+        <div class="auto-card-stat">
+          <span class="auto-card-stat-val">\${a.stats?.actionsToday || 0}</span>
+          <span class="auto-card-stat-lbl">hoy</span>
+        </div>
+        <div class="auto-card-stat">
+          <span class="auto-card-stat-val">\${a.stats?.total || 0}</span>
+          <span class="auto-card-stat-lbl">total</span>
+        </div>
+        <div class="auto-card-stat">
+          <span class="auto-card-stat-val">\${pct}%</span>
+          <span class="auto-card-stat-lbl">éxito</span>
+        </div>
+      </div>
+
+      <div class="auto-card-progress">
+        <div class="auto-card-progress-bar" style="width:\${pct}%;background:\${typeInfo.color}\"></div>
+      </div>
+
+      <div class="auto-card-actions">
+        <button class="btn btn-sm \${isActive ? 'btn-ghost' : 'btn-primary'}\" data-toggle=\"\${a.id}\">
+          \${isActive ? '⏸ Pausar' : '▶ Activar'}
+        </button>
+        <button class="btn btn-sm btn-ghost" data-run=\"\${a.id}\">
+          ▶▶ Ahora
+        </button>
+        <button class="btn btn-sm btn-danger-ghost" data-delete=\"\${a.id}\">
+          🗑
+        </button>
+      </div>
+    </div>\`;
+}
+
+// ── Render log ─────────────────────────────────────────────────────────────────
+function renderLog() {
+  const el = document.getElementById('autoLog');
+  if (!el) return;
+
+  if (!logEntries.length) {
+    el.innerHTML = \`<div class="auto-log-empty">Sin actividad registrada aún. Las acciones aparecerán aquí en tiempo real.</div>\`;
+    return;
+  }
+
+  const typeColors = {
+    like_post: '#0ea5e9', comment_post: '#8b5cf6', send_message: '#10b981',
+    connection_request: '#f59e0b', view_profile: '#ec4899',
+    endorse_skill: '#f97316', publish_post: '#14b8a6',
+  };
+
+  el.innerHTML = logEntries.map(entry => {
+    const color = typeColors[entry.type] || '#6b7280';
+    const resultIcon = entry.result === 'success' ? '✅' : '❌';
+    return \`
+      <div class="auto-log-entry">
+        <div class="auto-log-avatar" style="background:\${color}22;color:\${color}">
+          \${entry.initials || '??'}
+        </div>
+        <div class="auto-log-info">
+          <span class="auto-log-name">\${escHtml(entry.name || 'Acción')}</span>
+          \${entry.company ? \`<span class="auto-log-company">· \${escHtml(entry.company)}</span>\` : ''}
+          <span class="auto-log-action">\${escHtml(entry.action || entry.type)}</span>
+        </div>
+        <div class="auto-log-right">
+          <span class="auto-log-result">\${resultIcon}</span>
+          <span class="auto-log-time">\${entry.time || ''}</span>
+        </div>
+      </div>\`;
+  }).join('');
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────────
+async function toggleAuto(id) {
+  try {
+    const res = await API.post(\`/api/automations/\${id}/toggle\`);
+    showToast(res.status === 'active' ? '▶ Automatización activada' : '⏸ Automatización pausada', 'success');
+    await loadData();
+  } catch { showToast('Error al cambiar estado', 'error'); }
+}
+
+async function runAutoNow(id) {
+  const btn = document.querySelector(\`[data-run="\${id}"]\`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    const res = await API.post(\`/api/automations/\${id}/run\`);
+    if (res.ok) showToast('✅ Automatización ejecutada', 'success');
+    else showToast(res.error || 'Sin cuentas conectadas', 'warning');
+    await loadData();
+  } catch { showToast('Error. ¿Está el backend activo?', 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '▶▶ Ahora'; } }
+}
+
+async function deleteAuto(id) {
+  if (!confirm('¿Eliminar esta automatización?')) return;
+  try {
+    await API.delete(\`/api/automations/\${id}\`);
+    showToast('🗑 Eliminada', 'info');
+    automations = automations.filter(a => a.id !== id);
+    renderAutomationList();
+  } catch { showToast('Error al eliminar', 'error'); }
+}
+
+// ── Wizard ─────────────────────────────────────────────────────────────────────
+function openWizard() {
+  wizardStep = 1;
+  wizardData = { type: null, targets: [], content: '', dailyLimit: 20, schedule: 'all' };
+  document.getElementById('autoModal').style.display = 'flex';
+  renderWizardStep();
+}
+
+function closeWizard() {
+  document.getElementById('autoModal').style.display = 'none';
+}
+
+function renderWizardStep() {
+  const body = document.getElementById('wizardBody');
+  const backBtn = document.getElementById('wizardBack');
+  const nextBtn = document.getElementById('wizardNext');
+
+  document.querySelectorAll('.wizard-step').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.step) === wizardStep);
+    s.classList.toggle('done', parseInt(s.dataset.step) < wizardStep);
+  });
+
+  backBtn.style.display = wizardStep > 1 ? 'inline-flex' : 'none';
+
+  switch (wizardStep) {
+    case 1:
+      body.innerHTML = renderStep1();
+      nextBtn.textContent = 'Siguiente →';
+      if (wizardData.type) document.querySelector(\`[data-type="\${wizardData.type}"]\`)?.classList.add('type-selected');
+      body.querySelectorAll('.type-card').forEach(card => {
+        card.addEventListener('click', () => {
+          body.querySelectorAll('.type-card').forEach(c => c.classList.remove('type-selected'));
+          card.classList.add('type-selected');
+          wizardData.type = card.dataset.type;
+        });
+      });
+      break;
+
+    case 2:
+      body.innerHTML = renderStep2();
+      nextBtn.textContent = 'Siguiente →';
+      const typeInfo2 = AUTO_TYPES.find(t => t.key === wizardData.type);
+      if (typeInfo2?.targetMode === 'feed') document.getElementById('targetUrls')?.setAttribute('disabled', 'true');
+      break;
+
+    case 3:
+      const typeInfo3 = AUTO_TYPES.find(t => t.key === wizardData.type);
+      if (!typeInfo3?.hasContent) { wizardStep++; renderWizardStep(); return; }
+      body.innerHTML = renderStep3();
+      nextBtn.textContent = 'Siguiente →';
+      break;
+
+    case 4:
+      body.innerHTML = renderStep4();
+      nextBtn.textContent = '✅ Crear Automatización';
+      const slider = document.getElementById('dailyLimitSlider');
+      const sliderVal = document.getElementById('dailyLimitVal');
+      if (slider) {
+        slider.value = wizardData.dailyLimit;
+        sliderVal.textContent = wizardData.dailyLimit;
+        slider.addEventListener('input', () => { wizardData.dailyLimit = parseInt(slider.value); sliderVal.textContent = slider.value; });
+      }
+      break;
+  }
+}
+
+function renderStep1() {
+  return \`
+    <div class="wizard-step-content">
+      <h3 class="wizard-step-title">¿Qué querés automatizar?</h3>
+      <p class="wizard-step-hint">Elegí el tipo de acción que se ejecutará automáticamente en LinkedIn</p>
+      <div class="type-grid">
+        \${AUTO_TYPES.map(t => \`
+          <div class="type-card \${wizardData.type === t.key ? 'type-selected' : ''}\" data-type=\"\${t.key}\">
+            <div class="type-card-icon" style="background:\${t.color}22;color:\${t.color}">\${t.icon}</div>
+            <div class="type-card-label">\${t.label}</div>
+            <div class="type-card-desc">\${t.desc}</div>
+          </div>\`).join('')}
+      </div>
+    </div>\`;
+}
+
+function renderStep2() {
+  const typeInfo = AUTO_TYPES.find(t => t.key === wizardData.type);
+  const isFeed = typeInfo?.targetMode === 'feed';
+  return \`
+    <div class="wizard-step-content">
+      <h3 class="wizard-step-title">¿A quiénes apunta?</h3>
+      \${isFeed ? \`<div class="info-banner"><span>ℹ️</span><span>Esta automatización actúa sobre el <strong>feed de LinkedIn</strong>. No necesitás especificar URLs.</span></div>\`
+        : \`<p class="wizard-step-hint">URLs de perfiles de LinkedIn, una por línea</p>
+           <textarea id="targetUrls" class="form-textarea" rows="7" placeholder="https://www.linkedin.com/in/nombre-apellido/">\${wizardData.targets.join('\\n')}</textarea>
+           <div class="form-hint">Podés pegar hasta 50 URLs. Se procesan respetando el límite diario.</div>\`}
+    </div>\`;
+}
+
+function renderStep3() {
+  const typeInfo = AUTO_TYPES.find(t => t.key === wizardData.type);
+  return \`
+    <div class="wizard-step-content">
+      <h3 class="wizard-step-title">\${typeInfo?.contentLabel || 'Contenido'}</h3>
+      <p class="wizard-step-hint">Usá <code>{nombre}</code> y <code>{empresa}</code> como variables</p>
+      <textarea id="contentTemplate" class="form-textarea" rows="6" placeholder="\${typeInfo?.contentPlaceholder || ''}">\${wizardData.content}</textarea>
+      <div class="form-hint">Variables: <code>{nombre}</code> · <code>{empresa}</code> · <code>{cargo}</code>\${typeInfo?.key === 'connection' ? '<br>Límite: 300 caracteres' : ''}</div>
+    </div>\`;
+}
+
+function renderStep4() {
+  return \`
+    <div class="wizard-step-content">
+      <h3 class="wizard-step-title">Horario y límites</h3>
+      <p class="wizard-step-hint">Cuántas acciones ejecutar por día y en qué horario</p>
+      <div class="form-group">
+        <label class="form-label">Límite diario: <strong id="dailyLimitVal">\${wizardData.dailyLimit}</strong></label>
+        <input type="range" id="dailyLimitSlider" class="form-range" min="1" max="50" value="\${wizardData.dailyLimit}" />
+        <div class="range-labels"><span>1 (seguro)</span><span>50 (rápido)</span></div>
+        <div class="form-hint">⚠️ Recomendamos máximo 20/día</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horario</label>
+        <div class="schedule-options">
+          <label class="schedule-opt \${wizardData.schedule === 'morning' ? 'selected' : ''}\">
+            <input type="radio" name="schedule" value="morning" \${wizardData.schedule === 'morning' ? 'checked' : ''} />
+            <span class="schedule-opt-icon">🌅</span><span>Mañana</span><span class="schedule-opt-time">8:00–12:00</span>
+          </label>
+          <label class="schedule-opt \${wizardData.schedule === 'afternoon' ? 'selected' : ''}\">
+            <input type="radio" name="schedule" value="afternoon" \${wizardData.schedule === 'afternoon' ? 'checked' : ''} />
+            <span class="schedule-opt-icon">☀️</span><span>Tarde</span><span class="schedule-opt-time">12:00–18:00</span>
+          </label>
+          <label class="schedule-opt \${wizardData.schedule === 'all' ? 'selected' : ''}\">
+            <input type="radio" name="schedule" value="all" \${wizardData.schedule === 'all' ? 'checked' : ''} />
+            <span class="schedule-opt-icon">🔄</span><span>Todo el día</span><span class="schedule-opt-time">7:00–22:00</span>
           </label>
         </div>
       </div>
-
-      <div class="auto-target-tags">
-        ${(a.target.titles || []).map(t => `<span class="auto-tag">${t}</span>`).join('')}
-        ${(a.target.keywords || []).map(k => `<span class="auto-tag kw">🔑 ${k}</span>`).join('')}
-        ${(a.target.industries || []).map(i => `<span class="auto-tag ind">🏢 ${i}</span>`).join('')}
-      </div>
-
-      ${a.content?.template ? `
-        <div class="auto-template-preview">
-          <span class="auto-template-icon">📝</span>
-          <span class="auto-template-text">${a.content.template}</span>
-        </div>` : ''}
-
-      <div class="auto-stats-row">
-        <div class="auto-stat">
-          <div class="auto-stat-val">${a.stats.actionsToday}</div>
-          <div class="auto-stat-label">Hoy</div>
-        </div>
-        <div class="auto-stat">
-          <div class="auto-stat-val">${a.stats.total.toLocaleString('es-AR')}</div>
-          <div class="auto-stat-label">Total</div>
-        </div>
-        <div class="auto-stat">
-          <div class="auto-stat-val" style="color:var(--neon-green);">${a.stats.successRate}%</div>
-          <div class="auto-stat-label">Éxito</div>
-        </div>
-        <div class="auto-stat auto-stat-limit">
-          <div class="auto-limit-bar">
-            <div class="auto-limit-fill" style="width:${used}%;background:${safetyColor(used)};"></div>
-          </div>
-          <div class="auto-stat-label">${a.stats.actionsToday}/${a.schedule.dailyLimit} hoy</div>
-        </div>
-      </div>
-
-      <div class="auto-card-foot">
-        <span class="auto-last-run">🕐 ${a.lastRun}</span>
-        <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost auto-log-btn" data-id="${a.id}" style="font-size:12px;">Ver log</button>
-          <button class="btn btn-secondary auto-edit-btn" data-id="${a.id}" style="font-size:12px;">Editar</button>
-        </div>
-      </div>
-    </div>`;
+    </div>\`;
 }
 
-// ── Activity log row ──────────────────────────────────────────────────────────
-function logRow(entry) {
-  const type = AUTO_TYPES[entry.type] || AUTO_TYPES.message;
-  const success = entry.result === 'success';
-  return `
-    <tr class="log-row">
-      <td class="log-time">${entry.time}</td>
-      <td>
-        <span class="log-type-badge" style="background:${type.bg};color:${type.color};">${type.icon} ${type.label}</span>
-      </td>
-      <td class="log-contact">
-        <div class="log-avatar">${entry.initials}</div>
-        <div>
-          <div class="log-name">${entry.name}</div>
-          <div class="log-company">${entry.company}</div>
-        </div>
-      </td>
-      <td class="log-action-text">${entry.action}</td>
-      <td>
-        <span class="log-result ${success ? 'ok' : 'fail'}">${success ? '✓ OK' : '✗ Error'}</span>
-      </td>
-    </tr>`;
-}
+async function wizardNext() {
+  if (wizardStep === 1 && !wizardData.type) { showToast('Elegí un tipo de automatización', 'warning'); return; }
 
-// ── Wizard state ──────────────────────────────────────────────────────────────
-function openWizard(container, onCreated) {
-  let step = 1;
-  let wizard = { type: null, targets: {}, schedule: { dailyLimit: 20, hours: '09:00-18:00', days: ['Mon','Tue','Wed','Thu','Fri'] }, content: { template: '' } };
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'wizard-backdrop';
-  document.body.appendChild(backdrop);
-  requestAnimationFrame(() => backdrop.classList.add('open'));
-
-  const close = () => {
-    backdrop.classList.remove('open');
-    setTimeout(() => backdrop.remove(), 280);
-  };
-
-  const render = () => { backdrop.innerHTML = wizardHTML(step, wizard); bindWizard(backdrop, close, render, wizard, s => { step = s; }, onCreated); };
-  render();
-  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
-}
-
-function wizardHTML(step, wizard) {
-  const steps = ['Tipo', 'Audiencia', 'Horario', 'Contenido'];
-  const indicator = steps.map((s, i) => `
-    <div class="wiz-step ${i + 1 === step ? 'active' : i + 1 < step ? 'done' : ''}">
-      <div class="wiz-step-num">${i + 1 < step ? '✓' : i + 1}</div>
-      <span>${s}</span>
-    </div>
-    ${i < steps.length - 1 ? '<div class="wiz-step-line"></div>' : ''}`).join('');
-
-  let body = '';
-  if (step === 1) {
-    body = `
-      <div class="wiz-type-grid">
-        ${Object.entries(AUTO_TYPES).map(([key, t]) => `
-          <button class="wiz-type-card ${wizard.type === key ? 'selected' : ''}" data-type="${key}">
-            <span class="wiz-type-emoji">${t.icon}</span>
-            <span class="wiz-type-label">${t.label}</span>
-          </button>`).join('')}
-      </div>`;
-  } else if (step === 2) {
-    body = `
-      <div class="wiz-form">
-        <div class="wiz-form-group">
-          <label>Títulos de cargo objetivo</label>
-          <input class="wiz-input" id="wizTitles" placeholder="ej: HR Director, People Manager, CHRO" value="${(wizard.targets.titles || []).join(', ')}">
-          <span class="wiz-hint">Separar con coma. Vacío = todos.</span>
-        </div>
-        <div class="wiz-form-group">
-          <label>Industrias</label>
-          <input class="wiz-input" id="wizIndustries" placeholder="ej: Salud, Tecnología, Retail" value="${(wizard.targets.industries || []).join(', ')}">
-        </div>
-        <div class="wiz-form-group">
-          <label>Palabras clave en posts/perfil</label>
-          <input class="wiz-input" id="wizKeywords" placeholder="ej: bienestar, wellness, RRHH" value="${(wizard.targets.keywords || []).join(', ')}">
-        </div>
-        <div class="wiz-form-group">
-          <label>Países / Regiones</label>
-          <input class="wiz-input" id="wizCountries" placeholder="ej: Argentina, Chile, México" value="${(wizard.targets.countries || []).join(', ')}">
-        </div>
-      </div>`;
-  } else if (step === 3) {
-    const days = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const keys  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    body = `
-      <div class="wiz-form">
-        <div class="wiz-form-group">
-          <label>Límite diario de acciones <span class="wiz-badge" id="limitVal">${wizard.schedule.dailyLimit}</span></label>
-          <input type="range" class="wiz-range" id="wizLimit" min="5" max="100" value="${wizard.schedule.dailyLimit}">
-          <div class="wiz-range-labels"><span>5 seguro</span><span>100 riesgo</span></div>
-          <div class="safety-meter">
-            <div class="safety-meter-fill" id="safetyFill" style="width:${pct(wizard.schedule.dailyLimit, 100)}%;background:${safetyColor(pct(wizard.schedule.dailyLimit, 100))};"></div>
-          </div>
-          <span class="wiz-hint" id="safetyLabel">✅ Límite seguro — sin riesgo de restricción</span>
-        </div>
-        <div class="wiz-form-group">
-          <label>Horario de ejecución</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="time" class="wiz-input" id="wizFrom" value="09:00" style="width:130px;">
-            <span style="color:var(--text-2);">hasta</span>
-            <input type="time" class="wiz-input" id="wizTo" value="18:00" style="width:130px;">
-          </div>
-        </div>
-        <div class="wiz-form-group">
-          <label>Días de ejecución</label>
-          <div class="wiz-days">
-            ${days.map((d, i) => `
-              <button class="wiz-day-btn ${(wizard.schedule.days || []).includes(keys[i]) ? 'active' : ''}" data-day="${keys[i]}">${d}</button>`).join('')}
-          </div>
-        </div>
-        <div class="wiz-form-group">
-          <div class="wiz-safety-note">
-            🛡️ <strong>Modo seguro activado:</strong> las acciones se distribuyen aleatoriamente en el horario para imitar comportamiento humano.
-          </div>
-        </div>
-      </div>`;
-  } else if (step === 4) {
-    const needsTemplate = ['message','comment','followup'].includes(wizard.type);
-    const vars = ['{{nombre}}','{{empresa}}','{{cargo}}','{{industria}}'];
-    body = `
-      <div class="wiz-form">
-        ${needsTemplate ? `
-          <div class="wiz-form-group">
-            <label>Plantilla de mensaje</label>
-            <div class="wiz-vars">
-              ${vars.map(v => `<button class="wiz-var-chip" data-var="${v}">${v}</button>`).join('')}
-            </div>
-            <textarea class="wiz-input wiz-textarea" id="wizTemplate" placeholder="Hola {{nombre}}, vi tu perfil y quería conectar...">${wizard.content.template}</textarea>
-            <span class="wiz-hint">Caracteres: <span id="charCount">${wizard.content.template.length}</span>/300</span>
-          </div>` : `
-          <div class="wiz-no-template">
-            <span style="font-size:48px;">${AUTO_TYPES[wizard.type]?.icon || '⚡'}</span>
-            <p>Esta automatización no requiere plantilla de texto.</p>
-            <p style="color:var(--text-2);font-size:12px;">Se ejecutará automáticamente según los filtros y horario configurados.</p>
-          </div>`}
-        <div class="wiz-summary">
-          <div class="wiz-summary-title">✅ Resumen de la automatización</div>
-          <div class="wiz-summary-row"><span>Tipo</span><strong>${AUTO_TYPES[wizard.type]?.icon} ${AUTO_TYPES[wizard.type]?.label}</strong></div>
-          <div class="wiz-summary-row"><span>Audiencia</span><strong>${Object.values(wizard.targets).flat().join(', ') || 'Todos'}</strong></div>
-          <div class="wiz-summary-row"><span>Límite diario</span><strong>${wizard.schedule.dailyLimit} acciones</strong></div>
-          <div class="wiz-summary-row"><span>Horario</span><strong>09:00 · 18:00 · ${(wizard.schedule.days||[]).length} días</strong></div>
-        </div>
-      </div>`;
-  }
-
-  return `
-    <div class="wizard">
-      <div class="wizard-header">
-        <div class="wiz-title">Nueva automatización</div>
-        <button class="icon-btn wizard-close-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="wiz-steps-indicator">${indicator}</div>
-      <div class="wizard-body">${body}</div>
-      <div class="wizard-footer">
-        ${step > 1 ? `<button class="btn btn-secondary" id="wizBack">← Atrás</button>` : '<div></div>'}
-        <button class="btn btn-primary" id="wizNext">
-          ${step < 4 ? 'Continuar →' : '🚀 Lanzar automatización'}
-        </button>
-      </div>
-    </div>`;
-}
-
-function bindWizard(backdrop, close, render, wizard, setStep, onCreated) {
-  backdrop.querySelector('.wizard-close-btn')?.addEventListener('click', close);
-
-  // Step 1 — type selection
-  backdrop.querySelectorAll('.wiz-type-card').forEach(card => {
-    card.addEventListener('click', () => { wizard.type = card.dataset.type; render(); });
-  });
-
-  // Step 2 — target fields (saved on navigate)
-  // Step 3 — range slider
-  const limitInput = backdrop.querySelector('#wizLimit');
-  if (limitInput) {
-    limitInput.addEventListener('input', () => {
-      const v = parseInt(limitInput.value, 10);
-      backdrop.querySelector('#limitVal').textContent = v;
-      const p = pct(v, 100);
-      const fill = backdrop.querySelector('#safetyFill');
-      const lbl = backdrop.querySelector('#safetyLabel');
-      if (fill) fill.style.cssText = `width:${p}%;background:${safetyColor(p)};`;
-      if (lbl) lbl.textContent = p < 40 ? '✅ Límite seguro — sin riesgo de restricción' : p < 70 ? '⚠️ Moderado — monitorear actividad' : '🚨 Alto — riesgo de restricción de LinkedIn';
-    });
-  }
-
-  // Step 3 — day buttons
-  backdrop.querySelectorAll('.wiz-day-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('active');
-      const day = btn.dataset.day;
-      const idx = (wizard.schedule.days || []).indexOf(day);
-      if (idx >= 0) wizard.schedule.days.splice(idx, 1);
-      else { if (!wizard.schedule.days) wizard.schedule.days = []; wizard.schedule.days.push(day); }
-    });
-  });
-
-  // Step 4 — template
-  const tmpl = backdrop.querySelector('#wizTemplate');
-  if (tmpl) {
-    tmpl.addEventListener('input', () => {
-      wizard.content.template = tmpl.value;
-      const cc = backdrop.querySelector('#charCount');
-      if (cc) cc.textContent = tmpl.value.length;
-    });
-    backdrop.querySelectorAll('.wiz-var-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const pos = tmpl.selectionStart;
-        const v = chip.dataset.var;
-        tmpl.value = tmpl.value.slice(0, pos) + v + tmpl.value.slice(pos);
-        wizard.content.template = tmpl.value;
-        tmpl.focus();
-      });
-    });
-  }
-
-  // Back
-  backdrop.querySelector('#wizBack')?.addEventListener('click', () => {
-    saveStep(backdrop, wizard);
-    setStep(wizard._step - 1);
-    wizard._step--;
-    render();
-  });
-
-  // Next / Launch
-  backdrop.querySelector('#wizNext')?.addEventListener('click', async () => {
-    saveStep(backdrop, wizard);
-    if (wizard._step === undefined) wizard._step = 1;
-
-    if (wizard._step === 1 && !wizard.type) {
-      toast('Seleccioná un tipo de automatización', 'warning'); return;
+  if (wizardStep === 2) {
+    const typeInfo = AUTO_TYPES.find(t => t.key === wizardData.type);
+    if (typeInfo?.targetMode === 'urls') {
+      const raw = document.getElementById('targetUrls')?.value || '';
+      wizardData.targets = raw.split('\\n').map(l => l.trim()).filter(l => l.startsWith('http'));
+      if (!wizardData.targets.length) { showToast('Ingresá al menos una URL de LinkedIn', 'warning'); return; }
     }
-    if (wizard._step < 4) {
-      wizard._step++;
-      setStep(wizard._step);
-      render();
+  }
+
+  if (wizardStep === 3) {
+    const val = document.getElementById('contentTemplate')?.value || '';
+    wizardData.content = val.trim();
+    if (!wizardData.content) { showToast('Escribí el contenido', 'warning'); return; }
+  }
+
+  if (wizardStep === 4) {
+    const sel = document.querySelector('input[name="schedule"]:checked');
+    wizardData.schedule = sel?.value || 'all';
+    await saveAutomation();
+    return;
+  }
+
+  wizardStep++;
+  renderWizardStep();
+}
+
+function wizardPrev() {
+  if (wizardStep > 1) { wizardStep--; renderWizardStep(); }
+}
+
+async function saveAutomation() {
+  const btn = document.getElementById('wizardNext');
+  btn.disabled = true; btn.textContent = '⏳ Creando...';
+  try {
+    const payload = {
+      type: wizardData.type,
+      targets: { profileUrls: wizardData.targets },
+      content: { template: wizardData.content },
+      schedule: { dailyLimit: wizardData.dailyLimit, window: wizardData.schedule },
+    };
+    const res = await API.post('/api/automations', payload);
+    if (res.id) {
+      showToast('✅ Automatización creada', 'success');
+      closeWizard();
+      automations.unshift(res);
+      renderAutomationList();
+      const stats = await API.get('/api/automations/stats').catch(() => null);
+      if (stats) renderStats(stats);
     } else {
-      // Launch
-      await api.createAutomation(wizard);
-      close();
-      toast('🚀 Automatización creada y activa!', 'success', 4000);
-      onCreated();
+      showToast(res.error || 'Error al crear', 'error');
     }
-  });
-
-  // Init step tracking
-  if (!wizard._step) wizard._step = 1;
+  } catch { showToast('Error de conexión con el backend', 'error'); }
+  finally { btn.disabled = false; btn.textContent = '✅ Crear Automatización'; }
 }
 
-function saveStep(backdrop, wizard) {
-  const titles = backdrop.querySelector('#wizTitles')?.value;
-  if (titles !== undefined) wizard.targets.titles = titles.split(',').map(s => s.trim()).filter(Boolean);
-  const industries = backdrop.querySelector('#wizIndustries')?.value;
-  if (industries !== undefined) wizard.targets.industries = industries.split(',').map(s => s.trim()).filter(Boolean);
-  const keywords = backdrop.querySelector('#wizKeywords')?.value;
-  if (keywords !== undefined) wizard.targets.keywords = keywords.split(',').map(s => s.trim()).filter(Boolean);
-  const limit = backdrop.querySelector('#wizLimit')?.value;
-  if (limit) wizard.schedule.dailyLimit = parseInt(limit, 10);
-  const tmpl = backdrop.querySelector('#wizTemplate')?.value;
-  if (tmpl !== undefined) wizard.content.template = tmpl;
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Main render ───────────────────────────────────────────────────────────────
-export async function renderAutomations(container) {
-  container.innerHTML = `
-    <div class="view">
-      <div class="view-header">
-        <div>
-          <h1 class="view-title">Automatizaciones</h1>
-          <p class="view-subtitle">Reglas de engagement automático en LinkedIn · B2B LATAM</p>
-        </div>
-        <div class="view-actions">
-          <button class="btn btn-secondary" id="safetyBtn">
-            🛡️ Modo seguro
-          </button>
-          <button class="btn btn-primary" id="newAutoBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nueva automatización
-          </button>
-        </div>
-      </div>
-
-      <!-- Metrics -->
-      <div class="auto-metrics-row" id="autoMetrics">
-        ${[1,2,3,4].map(() => '<div class="card skeleton" style="height:88px;"></div>').join('')}
-      </div>
-
-      <!-- Safety banner -->
-      <div class="auto-safety-banner">
-        🛡️ <strong>Modo seguro activo:</strong> Acciones distribuidas aleatoriamente · Límites diarios respetados · Pausa automática si detecta captcha
-        <button class="auto-safety-close" id="closeSafetyBanner">✕</button>
-      </div>
-
-      <!-- Filter tabs -->
-      <div class="auto-filter-tabs" id="autoFilters">
-        <button class="auto-tab active" data-filter="all">Todas</button>
-        <button class="auto-tab" data-filter="message">💬 Mensajes</button>
-        <button class="auto-tab" data-filter="like">👍 Likes</button>
-        <button class="auto-tab" data-filter="comment">💭 Comentarios</button>
-        <button class="auto-tab" data-filter="followup">🔄 Follow-up</button>
-        <button class="auto-tab" data-filter="view">👀 Ver perfil</button>
-      </div>
-
-      <!-- Automations grid -->
-      <div class="auto-grid" id="autoGrid">
-        ${[1,2,3].map(() => '<div class="auto-card skeleton" style="height:280px;"></div>').join('')}
-      </div>
-
-      <!-- Activity log -->
-      <div class="card" style="margin-top:18px;">
-        <div class="card-title" style="display:flex;align-items:center;gap:10px;">
-          Log de actividad en tiempo real
-          <span class="nav-badge" style="margin-left:4px;" id="logBadge">…</span>
-          <span id="liveIndicator" style="margin-left:auto;font-size:11px;color:var(--neon-green);display:flex;align-items:center;gap:5px;">
-            <span style="width:7px;height:7px;border-radius:50%;background:var(--neon-green);animation:pulse 2s infinite;"></span>
-            EN VIVO · actualiza en <span id="refreshCountdown">30</span>s
-          </span>
-        </div>
-        <div class="card-subtitle" style="margin-bottom:14px;">Últimas acciones ejecutadas por tus automatizaciones</div>
-        <div class="log-table-wrap">
-          <table class="log-table" id="autoLog">
-            <thead><tr><th>Hora</th><th>Tipo</th><th>Contacto</th><th>Acción</th><th>Resultado</th></tr></thead>
-            <tbody id="logBody">
-              ${[1,2,3,4].map(() => '<tr><td colspan="5"><div class="skeleton" style="height:36px;border-radius:6px;"></div></td></tr>').join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>`;
-
-  // Fetch data
-  const [automations, stats, log] = await Promise.all([
-    api.getAutomations(),
-    api.getAutomationStats(),
-    api.getAutomationLog(),
-  ]);
-
-  // ── Metrics ──
-  const metricsCfg = [
-    { label: 'Automatizaciones activas', val: stats.active,        icon: '⚡', color: 'var(--neon-blue)'   },
-    { label: 'Acciones hoy',             val: stats.actionsToday,  icon: '🎯', color: 'var(--neon-purple)' },
-    { label: 'Mensajes enviados',        val: stats.messagesSent,  icon: '💬', color: 'var(--neon-cyan)'   },
-    { label: 'Tasa de éxito',            val: `${stats.successRate}%`, icon: '✅', color: 'var(--neon-green)'  },
-  ];
-  container.querySelector('#autoMetrics').innerHTML = metricsCfg.map(m => `
-    <div class="card auto-metric-card">
-      <div class="auto-metric-icon" style="color:${m.color};">${m.icon}</div>
-      <div class="auto-metric-val" style="color:${m.color};">${m.val}</div>
-      <div class="auto-metric-label">${m.label}</div>
-    </div>`).join('');
-
-  // ── Render grid ──
-  let currentFilter = 'all';
-
-  const renderGrid = () => {
-    const filtered = currentFilter === 'all' ? automations : automations.filter(a => a.type === currentFilter);
-    const grid = container.querySelector('#autoGrid');
-    grid.innerHTML = filtered.length
-      ? filtered.map(autoCard).join('')
-      : '<div class="empty">No hay automatizaciones de este tipo. ¡Creá una!</div>';
-    bindGridEvents(grid, automations);
-  };
-
-  renderGrid();
-
-  // ── Filters ──
-  container.querySelector('#autoFilters')?.addEventListener('click', e => {
-    const btn = e.target.closest('.auto-tab');
-    if (!btn) return;
-    container.querySelectorAll('.auto-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    renderGrid();
-  });
-
-  // ── Log ──
-  const refreshLog = async () => {
-    const fresh = await api.getAutomationLog();
-    const logBody = container.querySelector('#logBody');
-    if (!logBody) return;
-    logBody.innerHTML = fresh.length
-      ? fresh.map(logRow).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:var(--text-2);padding:24px;">Sin actividad todavía. Activá una automatización para ver el log.</td></tr>';
-    const badge = container.querySelector('#logBadge');
-    if (badge) badge.textContent = fresh.length;
-  };
-
-  const refreshMetrics = async () => {
-    const fresh = await api.getAutomationStats();
-    const grid = container.querySelector('#autoMetrics');
-    if (!grid) return;
-    const cfgs = [
-      { label: 'Automatizaciones activas', val: fresh.active,            icon: '⚡', color: 'var(--neon-blue)'   },
-      { label: 'Acciones hoy',             val: fresh.actionsToday,      icon: '🎯', color: 'var(--neon-purple)' },
-      { label: 'Mensajes enviados',        val: fresh.messagesSent,      icon: '💬', color: 'var(--neon-cyan)'   },
-      { label: 'Tasa de éxito',            val: `${fresh.successRate}%`, icon: '✅', color: 'var(--neon-green)'  },
-    ];
-    grid.innerHTML = cfgs.map(m => `
-      <div class="card auto-metric-card">
-        <div class="auto-metric-icon" style="color:${m.color};">${m.icon}</div>
-        <div class="auto-metric-val" style="color:${m.color};">${m.val}</div>
-        <div class="auto-metric-label">${m.label}</div>
-      </div>`).join('');
-  };
-
-  await refreshLog();
-
-  // Auto-refresh every 30 seconds
-  let countdown = 30;
-  const countdownEl = () => container.querySelector('#refreshCountdown');
-  const refreshTimer = setInterval(async () => {
-    countdown--;
-    const el = countdownEl();
-    if (el) el.textContent = countdown;
-    if (countdown <= 0) {
-      countdown = 30;
-      await Promise.all([refreshLog(), refreshMetrics()]);
-    }
-  }, 1000);
-
-  // Cleanup when navigating away
-  const observer = new MutationObserver(() => {
-    if (!document.body.contains(container)) {
-      clearInterval(refreshTimer);
-      observer.disconnect();
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-
-  // ── Buttons ──
-  container.querySelector('#newAutoBtn')?.addEventListener('click', () => {
-    openWizard(container, () => { currentView = null; renderAutomations(container); });
-  });
-  container.querySelector('#safetyBtn')?.addEventListener('click', () => {
-    modal({
-      title: '🛡️ Configuración de seguridad',
-      body: `
-        <div class="wiz-form">
-          <div class="wiz-form-group">
-            <label>Límite global de acciones por día</label>
-            <input type="range" class="wiz-range" id="globalLimit" min="10" max="200" value="150">
-            <div class="wiz-range-labels"><span>10</span><span>200</span></div>
-          </div>
-          <div class="wiz-form-group">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-              <input type="checkbox" checked> Pausar automáticamente si LinkedIn detecta actividad inusual
-            </label>
-          </div>
-          <div class="wiz-form-group">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-              <input type="checkbox" checked> Modo humano: delays aleatorios entre acciones (3–45 seg)
-            </label>
-          </div>
-          <div class="wiz-form-group">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-              <input type="checkbox"> Notificarme si una automatización supera el 90% del límite
-            </label>
-          </div>
-          <div class="auto-safety-banner" style="margin-top:0;">
-            🛡️ Configuración actual: <strong>Modo seguro ON</strong> · Delay promedio: 12 seg · Límite global: 150/día
-          </div>
-        </div>`,
-      actions: [
-        { label: 'Cancelar', cls: 'btn-secondary', onClick: ({ close }) => close() },
-        { label: 'Guardar cambios', cls: 'btn-primary', onClick: ({ close }) => { close(); toast('Configuración de seguridad guardada ✅', 'success'); } },
-      ],
-    });
-  });
-  container.querySelector('#closeSafetyBanner')?.addEventListener('click', e => {
-    e.target.closest('.auto-safety-banner')?.remove();
-  });
-}
-
-// ── Bind grid events ──────────────────────────────────────────────────────────
-function bindGridEvents(grid, automations) {
-  // Toggle switch
-  grid.querySelectorAll('.auto-toggle').forEach(toggle => {
-    toggle.addEventListener('change', async () => {
-      const id = toggle.dataset.id;
-      const a = automations.find(x => x.id === id);
-      if (!a) return;
-      toggle.disabled = true;
-      await api.toggleAutomation(id);
-      a.status = toggle.checked ? 'active' : 'paused';
-      toggle.disabled = false;
-      const pill = toggle.closest('.auto-card')?.querySelector('.status-pill');
-      if (pill) { pill.className = `status-pill ${a.status}`; pill.textContent = a.status === 'active' ? 'Activa' : 'Pausada'; }
-      toast(`Automatización ${a.status === 'active' ? 'activada ▶' : 'pausada ⏸'}`, a.status === 'active' ? 'success' : 'info');
-    });
-  });
-
-  // Ver log button — shows filtered entries for this automation
-  grid.querySelectorAll('.auto-log-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      const a = automations.find(x => x.id === id);
-      const log = await api.getAutomationLog();
-      // No server-side filter yet, show all with the automation name highlighted
-      const relevant = log.filter(e => e.name === a?.name || log.length < 5);
-      const rows = relevant.length ? relevant.map(logRow).join('') :
-        '<tr><td colspan="5" style="text-align:center;color:var(--text-2);padding:24px;">Sin actividad registrada aún para esta automatización.</td></tr>';
-
-      const backdrop = document.createElement('div');
-      backdrop.className = 'wizard-backdrop';
-      document.body.appendChild(backdrop);
-      requestAnimationFrame(() => backdrop.classList.add('open'));
-      backdrop.addEventListener('click', e => { if (e.target === backdrop) { backdrop.classList.remove('open'); setTimeout(() => backdrop.remove(), 280); } });
-
-      backdrop.innerHTML = `
-        <div class="wizard" style="max-width:700px;">
-          <div class="wizard-header">
-            <div class="wiz-title">📋 Log: ${a?.name || 'Automatización'}</div>
-            <button class="icon-btn wizard-close-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div class="wizard-body" style="padding:0;">
-            <div class="log-table-wrap" style="max-height:400px;overflow-y:auto;">
-              <table class="log-table">
-                <thead><tr><th>Hora</th><th>Tipo</th><th>Contacto</th><th>Acción</th><th>Resultado</th></tr></thead>
-                <tbody>${rows}</tbody>
-              </table>
-            </div>
-          </div>
-          <div class="wizard-footer"><div></div><button class="btn btn-secondary wizard-close-btn">Cerrar</button></div>
-        </div>`;
-
-      backdrop.querySelectorAll('.wizard-close-btn').forEach(b =>
-        b.addEventListener('click', () => { backdrop.classList.remove('open'); setTimeout(() => backdrop.remove(), 280); }));
-    });
-  });
-
-  // Edit button — show a simple edit modal
-  grid.querySelectorAll('.auto-edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const a = automations.find(x => x.id === id);
-      if (!a) return;
-
-      const backdrop = document.createElement('div');
-      backdrop.className = 'wizard-backdrop';
-      document.body.appendChild(backdrop);
-      requestAnimationFrame(() => backdrop.classList.add('open'));
-      const close = () => { backdrop.classList.remove('open'); setTimeout(() => backdrop.remove(), 280); };
-      backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
-
-      backdrop.innerHTML = `
-        <div class="wizard" style="max-width:480px;">
-          <div class="wizard-header">
-            <div class="wiz-title">✏️ Editar: ${a.name}</div>
-            <button class="icon-btn wizard-close-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-          </div>
-          <div class="wizard-body">
-            <div class="wiz-form">
-              <div class="wiz-form-group">
-                <label>Nombre</label>
-                <input class="wiz-input" id="editName" value="${a.name}">
-              </div>
-              <div class="wiz-form-group">
-                <label>Límite diario de acciones</label>
-                <input type="number" class="wiz-input" id="editLimit" min="1" max="100" value="${a.schedule?.dailyLimit || 15}">
-              </div>
-              ${a.content?.template !== undefined ? `
-              <div class="wiz-form-group">
-                <label>Plantilla de mensaje</label>
-                <textarea class="wiz-input wiz-textarea" id="editTemplate">${a.content.template || ''}</textarea>
-              </div>` : ''}
-            </div>
-          </div>
-          <div class="wizard-footer">
-            <button class="btn btn-secondary wizard-close-btn">Cancelar</button>
-            <button class="btn btn-primary" id="saveEditBtn">💾 Guardar cambios</button>
-          </div>
-        </div>`;
-
-      backdrop.querySelectorAll('.wizard-close-btn').forEach(b => b.addEventListener('click', close));
-      backdrop.querySelector('#saveEditBtn')?.addEventListener('click', () => {
-        // In live mode would PATCH /api/automations/:id
-        close();
-        toast('Cambios guardados ✅', 'success');
-      });
-    });
-  });
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const colors = { success:'#10b981', error:'#ef4444', warning:'#f59e0b', info:'#0ea5e9' };
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.style.cssText = \`border-left:4px solid \${colors[type]||colors.info}\`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.add('toast--show'), 10);
+  setTimeout(() => { toast.classList.remove('toast--show'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
