@@ -205,7 +205,10 @@ router.post('/threads/:id/messages', async (req, res) => {
   db.prepare('UPDATE threads SET preview = ?, unread = 0 WHERE id = ?').run(text, id);
 
   // Enqueue LinkedIn message if thread has a profile URL
-  const acc = db.prepare('SELECT * FROM accounts WHERE status = "active" LIMIT 1').get();
+  const accId = req.body.accountId;
+  const acc = accId
+    ? db.prepare('SELECT * FROM accounts WHERE id = ? AND status = "active"').get(accId)
+    : db.prepare('SELECT * FROM accounts WHERE status = "active" LIMIT 1').get();
   if (acc) {
     enqueue({
       type: JobType.SEND_MESSAGE,

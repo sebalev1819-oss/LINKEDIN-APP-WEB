@@ -87,8 +87,11 @@ router.post('/:id/run', async (req, res) => {
   const a = db.prepare('SELECT * FROM automations WHERE id = ?').get(req.params.id);
   if (!a) return res.status(404).json({ error: 'Automatización no encontrada' });
 
-  // Get first active account
-  const account = db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
+  // Use accountId from request body, or fallback to first active account
+  const accountId = req.body.accountId;
+  const account = accountId
+    ? db.prepare("SELECT * FROM accounts WHERE id = ? AND status='active'").get(accountId)
+    : db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
   if (!account) {
     return res.json({ ok: false, error: 'No hay cuentas de LinkedIn conectadas' });
   }
@@ -301,10 +304,12 @@ router.put('/:id', (req, res) => {
 
 // POST /api/automations/search-preview — Preview search results without acting
 router.post('/search-preview', async (req, res) => {
-  const { criteria } = req.body;
+  const { criteria, accountId } = req.body;
   if (!criteria) return res.status(400).json({ error: 'criteria requerido' });
 
-  const account = db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
+  const account = accountId
+    ? db.prepare("SELECT * FROM accounts WHERE id = ? AND status='active'").get(accountId)
+    : db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
   if (!account) return res.status(400).json({ error: 'No hay cuentas conectadas' });
 
   try {
@@ -338,7 +343,7 @@ router.post('/search-preview', async (req, res) => {
 
 // POST /api/automations/smart-run — Execute smart engage cycle
 router.post('/smart-run', async (req, res) => {
-  const { automationId, criteria, actions } = req.body;
+  const { automationId, criteria, actions, accountId } = req.body;
 
   // Get criteria from automation or request body
   let targetCriteria = criteria;
@@ -352,7 +357,9 @@ router.post('/smart-run', async (req, res) => {
 
   if (!targetCriteria) return res.status(400).json({ error: 'criteria o automationId requerido' });
 
-  const account = db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
+  const account = accountId
+    ? db.prepare("SELECT * FROM accounts WHERE id = ? AND status='active'").get(accountId)
+    : db.prepare("SELECT * FROM accounts WHERE status='active' LIMIT 1").get();
   if (!account) return res.status(400).json({ error: 'No hay cuentas conectadas' });
 
   const enabledActions = actions || ['like', 'comment', 'connect'];

@@ -20,6 +20,7 @@ const HEADLESS      = process.env.HEADLESS !== 'false';
 const DELAY_MIN     = parseInt(process.env.ACTION_DELAY_MIN || '2000', 10);
 const DELAY_MAX     = parseInt(process.env.ACTION_DELAY_MAX || '8000', 10);
 const LI_BASE       = 'https://www.linkedin.com';
+const NAV_TIMEOUT   = parseInt(process.env.NAV_TIMEOUT || '45000', 10);
 
 // Map: accountId → { browser, context, page }
 const sessions = new Map();
@@ -115,7 +116,7 @@ async function validateSession(cookie) {
     await context.addCookies(buildCookies(cookie));
     const page = await context.newPage();
 
-    await page.goto(`${LI_BASE}/in/me`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.goto(`${LI_BASE}/in/me`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(1000, 2000);
 
     // If redirected to login page, cookie is invalid
@@ -155,7 +156,7 @@ async function sendMessage(accountId, cookie, profileUrl, message) {
     const { page } = await getContext(accountId, cookie);
 
     // Navigate to profile
-    await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(1500, 3000);
 
     // Click "Message" button on profile
@@ -199,7 +200,7 @@ async function sendMessage(accountId, cookie, profileUrl, message) {
 async function likePost(accountId, cookie, postUrl) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(postUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(postUrl, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(2000, 4000);
 
     // Find like button (not already liked)
@@ -229,7 +230,7 @@ async function likePost(accountId, cookie, postUrl) {
 async function commentPost(accountId, cookie, postUrl, commentText) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(postUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(postUrl, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(2000, 4000);
 
     // Click on "Comment" button to open compose area
@@ -272,7 +273,7 @@ async function commentPost(accountId, cookie, postUrl, commentText) {
 async function viewProfile(accountId, cookie, profileUrl) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
 
     // Scroll down to simulate reading the profile
     await humanDelay(1500, 3000);
@@ -296,26 +297,51 @@ async function viewProfile(accountId, cookie, profileUrl) {
 async function publishPost(accountId, cookie, text) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(3000, 5000);
 
     console.log('[LinkedIn] publishPost: buscando botón "Comenzar publicación"...');
 
-    // LinkedIn changes class names often — try multiple selectors
+    // Take debug screenshot to see current LinkedIn UI
+    const fs = require('fs');
+    const path = require('path');
+    const debugDir = path.join(__dirname, '..', '..', 'data');
+    if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+
+    try {
+      await page.screenshot({ path: path.join(debugDir, 'debug-feed.png') });
+      console.log('[LinkedIn] Debug screenshot saved to data/debug-feed.png');
+    } catch {}
+
+    // LinkedIn 2024-2026 selectors — ordered by reliability
     const startSelectors = [
+      // Current (2025-2026) LinkedIn share box triggers
       'button.share-box-feed-entry__trigger',
+      '.share-box-feed-entry__trigger',
       'button[aria-label*="Comenzar una publicación"]',
       'button[aria-label*="Start a post"]',
       'button[aria-label*="Crear una publicación"]',
-      '.share-box-feed-entry__trigger',
-      '[data-control-name="share.feedshare_module.reshare_article_post"]',
+      'button[aria-label*="Escribe algo"]',
+      'button[aria-label*="Write"]',
+      // New LinkedIn UI (2026) — share prompt area
+      '.share-creation-state__trigger',
+      '.share-box button',
+      '[data-test-id="share-box-trigger"]',
+      // Generic fallbacks
+      'div[class*="share-box"] button',
+      'div[class*="share-creation"] button',
+      'div[class*="feed-shared-share"] button',
+      // Text-based fallbacks (any language)
+      'button:has-text("Comenzar")',
+      'button:has-text("Start a post")',
+      'button:has-text("Publicar")',
     ];
 
     let started = false;
     for (const sel of startSelectors) {
       try {
         const btn = page.locator(sel).first();
-        if (await btn.isVisible({ timeout: 3000 })) {
+        if (await btn.isVisible({ timeout: 2000 })) {
           await btn.click();
           started = true;
           console.log(`[LinkedIn] publishPost: botón encontrado con: ${sel}`);
@@ -324,34 +350,56 @@ async function publishPost(accountId, cookie, text) {
       } catch {}
     }
 
-    // Last resort: look for any clickable element in the share box area
+    // Broader fallback: click any element that looks like a share prompt
     if (!started) {
       try {
-        await page.locator('.share-box-feed-entry').first().click();
-        started = true;
-        console.log('[LinkedIn] publishPost: using share-box-feed-entry fallback');
+        // Look for the share box container and click it directly
+        const shareArea = page.locator('[class*="share-box"], [class*="share-creation"], [class*="feed-shared-share"]').first();
+        if (await shareArea.isVisible({ timeout: 3000 })) {
+          await shareArea.click();
+          started = true;
+          console.log('[LinkedIn] publishPost: clicked share area container');
+        }
+      } catch {}
+    }
+
+    // Last resort: try clicking the profile avatar area at the top of feed (opens share modal in new UI)
+    if (!started) {
+      try {
+        const avatar = page.locator('.share-box-feed-entry__avatar, [class*="share-box"] img, [class*="share-box"] .presence-entity').first();
+        if (await avatar.isVisible({ timeout: 2000 })) {
+          await avatar.click();
+          started = true;
+          console.log('[LinkedIn] publishPost: clicked avatar in share area');
+        }
       } catch {}
     }
 
     if (!started) {
-      throw new Error('No se encontró el botón "Comenzar publicación". LinkedIn puede haber cambiado su UI.');
+      // Save a screenshot for debugging
+      try { await page.screenshot({ path: path.join(debugDir, 'debug-no-share-btn.png') }); } catch {}
+      throw new Error('No se encontró el botón "Comenzar publicación". Revisá data/debug-no-share-btn.png para diagnosticar.');
     }
 
     await humanDelay(2000, 4000);
 
-    // Editor area — multiple possible selectors
+    // Editor area — multiple possible selectors (2024-2026)
     const editorSelectors = [
       'div.ql-editor[data-placeholder]',
       'div[contenteditable="true"][data-placeholder]',
       'div[role="textbox"][contenteditable="true"]',
+      'div[role="textbox"]',
       '.share-creation-state__content div[contenteditable]',
+      '.editor-content div[contenteditable]',
+      '[class*="share-creation"] div[contenteditable]',
+      '[class*="ql-editor"]',
     ];
 
     let editor = null;
     for (const sel of editorSelectors) {
       try {
         const el = page.locator(sel).first();
-        if (await el.isVisible({ timeout: 4000 })) {
+        if (await el.isVisible({ timeout: 3000 })) {
           editor = el;
           console.log(`[LinkedIn] publishPost: editor encontrado: ${sel}`);
           break;
@@ -360,7 +408,8 @@ async function publishPost(accountId, cookie, text) {
     }
 
     if (!editor) {
-      throw new Error('No se encontró el área de texto del post.');
+      try { await page.screenshot({ path: path.join(debugDir, 'debug-no-editor.png') }); } catch {}
+      throw new Error('No se encontró el área de texto del post. Revisá data/debug-no-editor.png');
     }
 
     await editor.click();
@@ -374,13 +423,15 @@ async function publishPost(accountId, cookie, text) {
 
     await humanDelay(2000, 4000);
 
-    // Post button — try multiple selectors
+    // Post button — try multiple selectors (2024-2026)
     const postBtnSelectors = [
       'button.share-actions__primary-action',
       'button[aria-label="Publicar"]',
       'button[aria-label="Post"]',
       'button:has-text("Publicar")',
       'button:has-text("Post")',
+      '[class*="share-actions"] button[type="submit"]',
+      '[class*="share-actions"] button:first-child',
     ];
 
     let posted = false;
@@ -396,7 +447,10 @@ async function publishPost(accountId, cookie, text) {
       } catch {}
     }
 
-    if (!posted) throw new Error('No se encontró el botón "Publicar".');
+    if (!posted) {
+      try { await page.screenshot({ path: path.join(debugDir, 'debug-no-post-btn.png') }); } catch {}
+      throw new Error('No se encontró el botón "Publicar". Revisá data/debug-no-post-btn.png');
+    }
 
     await humanDelay(3000, 6000);
     console.log('[LinkedIn] Post publicado exitosamente en LinkedIn ✅');
@@ -414,7 +468,7 @@ async function publishPost(accountId, cookie, text) {
 async function sendConnectionRequest(accountId, cookie, profileUrl, note = '') {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(profileUrl, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(2000, 4000);
 
     // Click "Connect" button
@@ -462,7 +516,7 @@ async function sendConnectionRequest(accountId, cookie, profileUrl, note = '') {
 async function likePostsFromFeed(accountId, cookie, limit = 5) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await checkAuth(accountId, page);
     await humanDelay(2000, 4000);
 
@@ -510,7 +564,7 @@ async function likePostsFromFeed(accountId, cookie, limit = 5) {
 async function endorseSkill(accountId, cookie, profileUrl) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(`${profileUrl}/details/skills/`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(`${profileUrl}/details/skills/`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await humanDelay(2000, 4000);
 
     const endorseBtn = page.locator('button:has-text("Recomendar"), button:has-text("Endorse")').first();
@@ -548,7 +602,7 @@ async function searchProfiles(accountId, cookie, criteria, maxResults = 20) {
     const query = queryParts.join(' ') || 'HR bienestar';
 
     const searchUrl = `${LI_BASE}/search/results/people/?keywords=${encodeURIComponent(query)}&origin=GLOBAL_SEARCH_HEADER`;
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await checkAuth(accountId, page);
     await humanDelay(2000, 4000);
 
@@ -608,7 +662,7 @@ async function scrapeRelevantFeedPosts(accountId, cookie, keywords = [], limit =
   try {
     const { page } = await getContext(accountId, cookie);
 
-    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
     await checkAuth(accountId, page);
     await humanDelay(2000, 4000);
 
