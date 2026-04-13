@@ -397,6 +397,7 @@ input,textarea{font-family:inherit;color:inherit}
       <button class="nav-item" data-view="content"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Contenido</span></button>
       <button class="nav-item" data-view="skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Habilidades</span><span class="nav-badge">248</span></button>
       <button class="nav-item" data-view="connectors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Conectores</span><span class="nav-badge neon">4</span></button>
+      <button class="nav-item" data-view="automations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Automatizaciones</span><span class="nav-badge">4</span></button>
     </nav>
     <div class="sidebar-footer">
       <div class="profile-card" id="sidebarProfileCard">
@@ -552,46 +553,12 @@ const DATA = {
     messages: [18,22,25,30,35,15,12],
     views: [85,102,95,118,130,70,65],
   },
-  activity: [
-    { icon:'🤝', text:'<strong>María González</strong> aceptó tu solicitud de conexión', time:'Hace 3 min' },
-    { icon:'💬', text:'<strong>Carlos Ramírez</strong> respondió tu mensaje de seguimiento', time:'Hace 18 min' },
-    { icon:'👀', text:'<strong>Ana Silva</strong> vio tu perfil 2 veces esta semana', time:'Hace 1 h' },
-    { icon:'🚀', text:'Campaña <strong>HR Directors LATAM</strong> alcanzó 40% de respuesta', time:'Hace 2 h' },
-    { icon:'📝', text:'Tu post <strong>"Bienestar como KPI"</strong> superó 5k impresiones', time:'Hace 5 h' },
-    { icon:'✨', text:'<strong>Juan Pérez</strong> reaccionó a tu publicación', time:'Hace 6 h' },
-  ],
-  campaigns: [
-    { id:'c1', name:'HR Directors LATAM Q2', description:'Outreach a directores de RRHH en empresas de +500 empleados en Chile y México.', status:'active', progress:68, stats:{sent:312,accepted:184,replies:67}, steps:[{label:'Visita perfil',state:'done'},{label:'Conexión',state:'done'},{label:'Mensaje 1',state:'active'},{label:'Follow-up',state:'pending'}] },
-    { id:'c2', name:'CEOs Bienestar MX', description:'CEOs y founders de startups de bienestar y salud en México post-WTW.', status:'active', progress:42, stats:{sent:148,accepted:89,replies:31}, steps:[{label:'Visita perfil',state:'done'},{label:'Conexión',state:'active'},{label:'Mensaje 1',state:'pending'},{label:'Follow-up',state:'pending'}] },
-    { id:'c3', name:'Brokers Argentina Retención', description:'Brokers clave en AR para consolidar relación y detectar oportunidades.', status:'paused', progress:22, stats:{sent:68,accepted:34,replies:9}, steps:[{label:'Visita perfil',state:'done'},{label:'Conexión',state:'done'},{label:'Mensaje 1',state:'pending'},{label:'Follow-up',state:'pending'}] },
-    { id:'c4', name:'Warm Nurture VitaCare', description:'Seguimiento a prospectos de rehabilitación premium en Buenos Aires.', status:'draft', progress:0, stats:{sent:0,accepted:0,replies:0}, steps:[{label:'Visita perfil',state:'pending'},{label:'Conexión',state:'pending'},{label:'Mensaje 1',state:'pending'},{label:'Follow-up',state:'pending'}] },
-  ],
-  threads: [
-    { id:'t1', name:'María González', initials:'MG', title:'HR Director @ Banco Santander Chile', time:'11:42', preview:'¡Gracias por tu mensaje! Me interesa conocer más sobre Care Assistance...', unread:true, filter:'prospects', messages:[{dir:'out',text:'Hola María, vi que estás liderando el programa de bienestar en Santander. Me encantaría contarte cómo ayudamos a empresas similares en Chile.',time:'10:28'},{dir:'in',text:'¡Hola Sebastián! Gracias por contactarme. Justo estamos evaluando proveedores para el próximo trimestre.',time:'11:15'},{dir:'in',text:'¿Podrías enviarme un deck?',time:'11:42'}] },
-    { id:'t2', name:'Carlos Ramírez', initials:'CR', title:'CEO @ WellnessLab México', time:'09:18', preview:'Perfecto, agendemos la llamada para el martes que viene.', unread:true, filter:'customers', messages:[{dir:'in',text:'Hola Sebastián, tengo interés en una alianza estratégica para México.',time:'09:05'},{dir:'out',text:'¡Hola Carlos! Encantado. ¿Qué tal una llamada la próxima semana?',time:'09:12'},{dir:'in',text:'Perfecto, agendemos la llamada para el martes que viene.',time:'09:18'}] },
-    { id:'t3', name:'Ana Silva', initials:'AS', title:'People Ops @ Rappi', time:'Ayer', preview:'Compartí la propuesta internamente, en una semana te cuento.', unread:false, filter:'prospects', messages:[{dir:'out',text:'Hola Ana, te envío la propuesta que acordamos.',time:'Ayer'},{dir:'in',text:'Compartí la propuesta internamente, en una semana te cuento.',time:'Ayer'}] },
-    { id:'t4', name:'Juan Pérez', initials:'JP', title:'Broker @ Willis Towers Watson', time:'Ayer', preview:'Confirmamos la reunión del jueves a las 15hs.', unread:false, filter:'partners', messages:[{dir:'out',text:'Juan, confirmamos jueves 15hs?',time:'Ayer'},{dir:'in',text:'Confirmamos la reunión del jueves a las 15hs.',time:'Ayer'}] },
-    { id:'t5', name:'Laura Méndez', initials:'LM', title:'CFO @ BH Health Group', time:'2d', preview:'Gracias por el follow-up, lo revisamos en el board.', unread:false, filter:'prospects', messages:[{dir:'out',text:'Hola Laura, adjunto el caso de éxito de Chile.',time:'2d'},{dir:'in',text:'Gracias por el follow-up, lo revisamos en el board.',time:'2d'}] },
-  ],
+  activity: [],
+  campaigns: [],
+  threads: [],
   quickTemplates: ['Gracias por conectar 👋','Agendemos una llamada','Te envío el deck','Follow-up cordial'],
-  leads: {
-    new: [
-      { id:'l1', name:'Diego Fuentes', company:'Falabella Retail', initials:'DF', tags:['hr','latam'], score:82, time:'2h' },
-      { id:'l2', name:'Sofía Herrera', company:'Walmart México', initials:'SH', tags:['hr','wellness'], score:74, time:'5h' },
-      { id:'l3', name:'Martín Vega', company:'MercadoLibre', initials:'MV', tags:['ceo','latam'], score:88, time:'1d' },
-    ],
-    contacted: [
-      { id:'l4', name:'Valentina Rojas', company:'Copec Energy', initials:'VR', tags:['hr'], score:70, time:'3d' },
-      { id:'l5', name:'Andrés López', company:'Bimbo México', initials:'AL', tags:['hr','wellness'], score:85, time:'4d' },
-    ],
-    engaged: [
-      { id:'l6', name:'Paula Sánchez', company:'Cornershop', initials:'PS', tags:['ceo','wellness'], score:91, time:'1w' },
-      { id:'l7', name:'Roberto Díaz', company:'Banco de Chile', initials:'RD', tags:['hr','latam'], score:78, time:'5d' },
-    ],
-    won: [
-      { id:'l8', name:'Carolina Bravo', company:'Globant', initials:'CB', tags:['hr','wellness'], score:95, time:'2w' },
-    ],
-  },
+  leads: { new: [], contacted: [], engaged: [], won: [] },
+
   skills: [
     { id:'sk1', emoji:'🧠', name:'Bienestar Corporativo', cat:'Health & Wellness', color:'#34d399', endorsements:248, given:89, pending:12, progress:82 },
     { id:'sk2', emoji:'💼', name:'Gestión de RRHH', cat:'Human Resources', color:'#4f8cff', endorsements:196, given:67, pending:8, progress:71 },
@@ -719,31 +686,316 @@ const stepIcons = {
   'Follow-up':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>',
 };
 function campaignCard(c){
+  const stMap={active:'Activa',paused:'Pausada',draft:'Borrador'};
   return `<div class="card campaign-card">
-    <div class="campaign-head"><div style="flex:1;"><div class="campaign-name">${c.name}</div><div class="campaign-desc">${c.description}</div></div><span class="status-pill ${c.status}">${c.status==='active'?'Activa':c.status==='paused'?'Pausada':'Borrador'}</span></div>
-    <div class="campaign-steps">${c.steps.map(s=>`<div class="step-chip ${s.state}">${stepIcons[s.label]||''}<span>${s.label}</span></div>`).join('')}</div>
-    <div class="campaign-progress"><div class="campaign-progress-bar" style="width:${c.progress}%"></div></div>
-    <div class="campaign-stats"><div class="stat-mini"><div class="stat-mini-val">${c.stats.sent}</div><div class="stat-mini-label">Enviadas</div></div><div class="stat-mini"><div class="stat-mini-val">${c.stats.accepted}</div><div class="stat-mini-label">Aceptadas</div></div><div class="stat-mini"><div class="stat-mini-val">${c.stats.replies}</div><div class="stat-mini-label">Respuestas</div></div></div>
-    <div style="display:flex;gap:8px;"><button class="btn btn-secondary" style="flex:1;" data-action="toggle" data-id="${c.id}">${c.status==='active'?'⏸ Pausar':c.status==='paused'?'▶ Reanudar':'🚀 Lanzar'}</button><button class="btn btn-ghost" data-action="edit">Editar</button></div>
+    <div class="campaign-head"><div style="flex:1;"><div class="campaign-name">${c.name}</div><div class="campaign-desc">${c.description||'Sin descripción'}</div></div><span class="status-pill ${c.status||'draft'}">${stMap[c.status]||'Borrador'}</span></div>
+    <div class="campaign-steps">${(c.steps||[{label:'Visita perfil',state:'pending'},{label:'Conexión',state:'pending'},{label:'Mensaje 1',state:'pending'},{label:'Follow-up',state:'pending'}]).map(s=>`<div class="step-chip ${s.state}">${stepIcons[s.label]||''}<span>${s.label}</span></div>`).join('')}</div>
+    <div class="campaign-progress"><div class="campaign-progress-bar" style="width:${c.progress||0}%"></div></div>
+    <div class="campaign-stats"><div class="stat-mini"><div class="stat-mini-val">${(c.stats&&c.stats.sent)||0}</div><div class="stat-mini-label">Enviadas</div></div><div class="stat-mini"><div class="stat-mini-val">${(c.stats&&c.stats.accepted)||0}</div><div class="stat-mini-label">Aceptadas</div></div><div class="stat-mini"><div class="stat-mini-val">${(c.stats&&c.stats.replies)||0}</div><div class="stat-mini-label">Respuestas</div></div></div>
+    <div style="display:flex;gap:8px;"><button class="btn btn-secondary" style="flex:1;" data-action="toggle" data-id="${c.id}">${c.status==='active'?'⏸ Pausar':c.status==='paused'?'▶ Reanudar':'🚀 Lanzar'}</button><button class="btn btn-ghost" data-action="delete" data-id="${c.id}" style="color:var(--neon-red)">✕</button></div>
   </div>`;
 }
 function renderCampaigns(container){
-  container.innerHTML=`<div class="view">
+  const html = `<div class="view">
     <div class="view-header">
-      <div><h1 class="view-title">Campañas</h1><p class="view-subtitle">Secuencias automatizadas de outreach B2B</p></div>
-      <div class="view-actions"><button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva campaña</button></div>
+      <div><h1 class="view-title">Campañas</h1><p class="view-subtitle">Secuencias automatizadas de outreach B2B · Conectadas a tu cuenta LinkedIn</p></div>
+      <div class="view-actions"><button class="btn btn-primary" id="newCampaignFormBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nueva campaña</button></div>
     </div>
-    <div class="campaigns-grid" id="campaignsGrid">${DATA.campaigns.map(campaignCard).join('')}</div>
+
+    <!-- Campaign Modal -->
+    <div id="campaignModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#11141e;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:36px;width:100%;max-width:620px;max-height:85vh;overflow-y:auto;position:relative">
+        <button onclick="closeCampaignModal()" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.07);border:none;color:var(--text-1);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        <div style="font-size:20px;font-weight:800;margin-bottom:4px">✨ Nueva campaña</div>
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:24px">Configurá tu secuencia de outreach en LinkedIn</div>
+
+        <!-- Step indicator -->
+        <div style="display:flex;gap:8px;margin-bottom:28px" id="modalStepBar">
+          ${['Campaña','Audiencia','Mensajes','Lanzar'].map((s,i)=>`<div style="flex:1;text-align:center" class="modal-step" data-step="${i}">
+            <div style="width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;transition:all .2s" id="mdot-${i}">${i+1}</div>
+            <div style="font-size:11px;font-weight:500" id="mlbl-${i}">${s}</div>
+          </div>`).join('<div style="flex:0;align-self:center;width:24px;height:1px;background:rgba(255,255,255,0.1)"></div>')}
+        </div>
+
+        <!-- Step 0: Campaign info -->
+        <div id="ms-0">
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">NOMBRE DE LA CAMPAÑA *</label>
+            <input id="c-name" type="text" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:14px" placeholder="Ej: HR Directors LATAM Q2">
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">DESCRIPCIÓN</label>
+            <textarea id="c-desc" rows="3" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Describe el objetivo de esta campaña..."></textarea>
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">TIPO DE CAMPAÑA</label>
+            <select id="c-type" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px">
+              <option value="connection">🤝 Conexión + Mensaje (outreach B2B)</option>
+              <option value="message">💬 Solo mensaje (a conexiones existentes)</option>
+              <option value="like">👍 Engagement (likes + comentarios)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">CUENTA DE LINKEDIN</label>
+            <select id="c-account" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px"></select>
+          </div>
+        </div>
+
+        <!-- Step 1: Audience -->
+        <div id="ms-1" style="display:none">
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">URLs DE PERFILES LINKEDIN (uno por línea)</label>
+            <textarea id="c-urls" rows="8" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-family:monospace;font-size:12px;resize:vertical" placeholder="https://www.linkedin.com/in/persona1/
+https://www.linkedin.com/in/persona2/
+https://www.linkedin.com/in/persona3/"></textarea>
+            <div style="font-size:11px;color:var(--text-3);margin-top:6px">💡 Podés obtener estas URLs buscando en LinkedIn y copiando los perfiles de tu audiencia objetivo</div>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">LÍMITE DIARIO DE ACCIONES</label>
+            <input id="c-limit" type="number" value="20" min="1" max="80" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px">
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px">Recomendado: máx 30/día para evitar restricciones de LinkedIn</div>
+          </div>
+        </div>
+
+        <!-- Step 2: Messages -->
+        <div id="ms-2" style="display:none">
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">NOTA DE CONEXIÓN <span style="color:var(--text-3);font-weight:400">(opcional, máx 300 caracteres)</span></label>
+            <textarea id="c-note" rows="3" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Hola {nombre}, vi tu perfil y me gustaría conectar. Trabajo en..."></textarea>
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px">Variables disponibles: {nombre} · {empresa} · {cargo}</div>
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">MENSAJE INICIAL</label>
+            <textarea id="c-msg1" rows="5" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Hola {nombre}, gracias por conectar!
+
+Vi que trabajás en {empresa} y quería contarte brevemente sobre lo que hacemos en Care Assistance..."></textarea>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:600;color:var(--text-2);display:block;margin-bottom:6px">MENSAJE DE FOLLOW-UP <span style="color:var(--text-3);font-weight:400">(se envía a los 3 días si no responde)</span></label>
+            <textarea id="c-msg2" rows="3" style="width:100%;padding:11px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:10px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Hola {nombre}, quería hacer un seguimiento sobre mi mensaje anterior..."></textarea>
+          </div>
+        </div>
+
+        <!-- Step 3: Launch -->
+        <div id="ms-3" style="display:none">
+          <div style="background:rgba(79,140,255,0.07);border:1px solid rgba(79,140,255,0.2);border-radius:12px;padding:20px;margin-bottom:20px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:12px">📋 Resumen de tu campaña</div>
+            <div id="c-summary" style="font-size:13px;color:var(--text-1);line-height:2"></div>
+          </div>
+          <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:14px;font-size:12px;color:var(--neon-amber);margin-bottom:20px">
+            ⚠️ Las campañas se ejecutan usando tu cuenta de LinkedIn real. Respetá los límites diarios para evitar restricciones.
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <div style="display:flex;gap:10px;margin-top:24px">
+          <button id="modalBackBtn" onclick="modalStep(-1)" class="btn btn-secondary" style="display:none">← Atrás</button>
+          <div style="flex:1"></div>
+          <button id="modalNextBtn" onclick="modalStep(1)" class="btn btn-primary">Siguiente →</button>
+          <button id="modalLaunchBtn" onclick="launchCampaign()" class="btn btn-primary" style="display:none;background:linear-gradient(135deg,#059669,#10b981)">🚀 Crear campaña</button>
+        </div>
+        <div id="modalMsg" style="font-size:12px;text-align:center;margin-top:12px"></div>
+      </div>
+    </div>
+
+    <div class="campaigns-grid" id="campaignsGrid"></div>
   </div>`;
-  container.querySelector('#campaignsGrid').addEventListener('click',(e)=>{
-    const btn=e.target.closest('[data-action]');if(!btn)return;
+  container.innerHTML = html;
+
+  document.getElementById('newCampaignFormBtn').addEventListener('click', openCampaignModal);
+  loadCampaigns();
+}
+
+let _modalCurrentStep = 0;
+
+function openCampaignModal() {
+  _modalCurrentStep = 0;
+  const modal = document.getElementById('campaignModal');
+  modal.style.display = 'flex';
+  updateModalStep();
+  // Load accounts into selector
+  fetch(LI_API + '/accounts').then(r=>r.json()).then(accounts=>{
+    const sel = document.getElementById('c-account');
+    if (!sel) return;
+    if (!Array.isArray(accounts)||!accounts.length) {
+      sel.innerHTML = '<option value="">— Sin cuentas. Ir a Conectores primero —</option>';
+    } else {
+      sel.innerHTML = accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    }
+  }).catch(()=>{ const sel=document.getElementById('c-account'); if(sel) sel.innerHTML='<option value="">— Cuenta demo —</option>'; });
+}
+
+function closeCampaignModal() {
+  const modal = document.getElementById('campaignModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function updateModalStep() {
+  [0,1,2,3].forEach(i => {
+    const sec = document.getElementById('ms-'+i);
+    if (sec) sec.style.display = i===_modalCurrentStep ? 'block' : 'none';
+    const dot = document.getElementById('mdot-'+i);
+    const lbl = document.getElementById('mlbl-'+i);
+    if (dot) {
+      dot.style.background = i < _modalCurrentStep ? 'var(--neon-green)' : i===_modalCurrentStep ? 'var(--neon-blue)' : 'var(--bg-3)';
+      dot.style.color = i <= _modalCurrentStep ? '#fff' : 'var(--text-2)';
+    }
+    if (lbl) lbl.style.color = i===_modalCurrentStep ? 'var(--text-0)' : 'var(--text-3)';
+  });
+  const back = document.getElementById('modalBackBtn');
+  const next = document.getElementById('modalNextBtn');
+  const launch = document.getElementById('modalLaunchBtn');
+  if (back) back.style.display = _modalCurrentStep > 0 ? 'inline-flex' : 'none';
+  if (next) next.style.display = _modalCurrentStep < 3 ? 'inline-flex' : 'none';
+  if (launch) launch.style.display = _modalCurrentStep === 3 ? 'inline-flex' : 'none';
+  if (_modalCurrentStep === 3) buildSummary();
+}
+
+function modalStep(dir) {
+  if (dir > 0 && _modalCurrentStep === 0) {
+    const name = document.getElementById('c-name')?.value.trim();
+    if (!name) { const m=document.getElementById('modalMsg'); if(m){m.style.color='var(--neon-red)';m.textContent='El nombre de la campaña es obligatorio';} return; }
+  }
+  const msg = document.getElementById('modalMsg');
+  if (msg) msg.textContent = '';
+  _modalCurrentStep = Math.max(0, Math.min(3, _modalCurrentStep + dir));
+  updateModalStep();
+}
+
+function buildSummary() {
+  const name  = document.getElementById('c-name')?.value||'—';
+  const type  = document.getElementById('c-type')?.options[document.getElementById('c-type').selectedIndex]?.text||'—';
+  const urls  = (document.getElementById('c-urls')?.value||'').split('\n').filter(u=>u.trim()).length;
+  const limit = document.getElementById('c-limit')?.value||20;
+  const sum = document.getElementById('c-summary');
+  if (sum) sum.innerHTML = `
+    <div>📌 <strong>Nombre:</strong> ${name}</div>
+    <div>🎯 <strong>Tipo:</strong> ${type}</div>
+    <div>👥 <strong>Perfiles objetivo:</strong> ${urls} URLs cargadas</div>
+    <div>⏱ <strong>Límite diario:</strong> ${limit} acciones/día</div>
+    <div>📊 <strong>Estado inicial:</strong> Borrador</div>`;
+}
+
+async function launchCampaign() {
+  const name    = document.getElementById('c-name')?.value.trim();
+  const desc    = document.getElementById('c-desc')?.value.trim();
+  const type    = document.getElementById('c-type')?.value||'connection';
+  const accId   = document.getElementById('c-account')?.value;
+  const urlsRaw = document.getElementById('c-urls')?.value||'';
+  const limit   = parseInt(document.getElementById('c-limit')?.value)||20;
+  const note    = document.getElementById('c-note')?.value.trim();
+  const msg1    = document.getElementById('c-msg1')?.value.trim();
+  const msg2    = document.getElementById('c-msg2')?.value.trim();
+  const urls    = urlsRaw.split('\n').map(u=>u.trim()).filter(Boolean);
+
+  const btn = document.getElementById('modalLaunchBtn');
+  const msg = document.getElementById('modalMsg');
+  if (btn) { btn.disabled=true; btn.textContent='Creando...'; }
+  if (msg) { msg.textContent=''; }
+
+  try {
+    const r = await fetch(LI_API + '/automations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type,
+        name,
+        description: desc,
+        targets: { profileUrls: urls },
+        content: { connectionNote: note, template: msg1, followUp: msg2 },
+        schedule: { dailyLimit: limit },
+        accountId: accId,
+      })
+    });
+    const d = await r.json();
+    if (d.id || d.ok !== false) {
+      // Also save locally for display
+      DATA.campaigns.push({
+        id: d.id || ('c-'+Date.now()),
+        name, description: desc,
+        status: 'draft', progress: 0,
+        stats: { sent:0, accepted:0, replies:0 },
+        steps: [
+          {label:'Visita perfil',state:'pending'},
+          {label:'Conexión',state:'pending'},
+          {label:'Mensaje 1',state:'pending'},
+          {label:'Follow-up',state:'pending'}
+        ]
+      });
+      closeCampaignModal();
+      toast('Campaña "' + name + '" creada exitosamente 🚀', 'success', 4000);
+      loadCampaigns();
+    } else {
+      if (msg) { msg.style.color='var(--neon-red)'; msg.textContent='Error: '+(d.error||'No se pudo crear'); }
+    }
+  } catch (err) {
+    // Offline mode — save only locally
+    DATA.campaigns.push({
+      id: 'c-'+Date.now(), name, description: desc,
+      status: 'draft', progress: 0,
+      stats: { sent:0, accepted:0, replies:0 },
+      steps: [
+        {label:'Visita perfil',state:'pending'},{label:'Conexión',state:'pending'},
+        {label:'Mensaje 1',state:'pending'},{label:'Follow-up',state:'pending'}
+      ]
+    });
+    closeCampaignModal();
+    toast('Campaña creada (modo local — backend no disponible)', 'info', 4000);
+    loadCampaigns();
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='🚀 Crear campaña'; }
+  }
+}
+
+async function loadCampaigns() {
+  const grid = document.getElementById('campaignsGrid');
+  if (!grid) return;
+  // Try backend first
+  try {
+    const r = await fetch(LI_API + '/automations', { signal: AbortSignal.timeout(3000) });
+    const items = await r.json();
+    if (Array.isArray(items) && items.length) {
+      const mapped = items.map(a => ({
+        id: a.id, name: a.name, description: a.triggerLabel || '',
+        status: a.status, progress: Math.round((a.stats?.actionsToday||0)/Math.max(a.schedule?.dailyLimit||20,1)*100),
+        stats: { sent: a.stats?.total||0, accepted: 0, replies: 0 },
+        steps: [{label:'Visita perfil',state:'done'},{label:'Conexión',state:a.status==='active'?'active':'pending'},{label:'Mensaje 1',state:'pending'},{label:'Follow-up',state:'pending'}]
+      }));
+      // Merge with local
+      const allIds = new Set(mapped.map(m=>m.id));
+      const extra = DATA.campaigns.filter(c=>!allIds.has(c.id));
+      renderCampaignGrid([...mapped,...extra], grid);
+      return;
+    }
+  } catch {}
+  // Show local data
+  renderCampaignGrid(DATA.campaigns, grid);
+}
+
+function renderCampaignGrid(campaigns, grid) {
+  if (!campaigns.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px">
+      <div style="font-size:48px;margin-bottom:16px">🚀</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Todavía no tenés campañas</div>
+      <div style="font-size:14px;color:var(--text-2);margin-bottom:24px">Creá tu primera campaña de outreach y empezá a conectar con tu audiencia</div>
+      <button class="btn btn-primary" onclick="document.getElementById('newCampaignFormBtn').click()">✨ Crear mi primera campaña</button>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = campaigns.map(campaignCard).join('');
+  grid.addEventListener('click',(e)=>{
+    const btn=e.target.closest('[data-action]'); if(!btn)return;
+    const id=btn.dataset.id;
     if(btn.dataset.action==='toggle'){
-      const c=DATA.campaigns.find(x=>x.id===btn.dataset.id);
-      if(c){c.status=c.status==='active'?'paused':c.status==='paused'?'active':'active';}
-      renderCampaigns(container);
-      toast('Estado de campaña actualizado','success');
-    } else if(btn.dataset.action==='edit'){
-      toast('Editor de campañas próximamente','info');
+      const c=DATA.campaigns.find(x=>x.id===id)||{};
+      if(c.status){c.status=c.status==='active'?'paused':c.status==='paused'?'active':'active';}
+      toast('Estado actualizado','success'); loadCampaigns();
+    } else if(btn.dataset.action==='delete'){
+      if(confirm('¿Eliminar esta campaña?')){
+        DATA.campaigns=DATA.campaigns.filter(c=>c.id!==id);
+        fetch(LI_API+'/automations/'+id,{method:'DELETE'}).catch(()=>{});
+        toast('Campaña eliminada','info'); loadCampaigns();
+      }
     }
   });
 }
@@ -824,23 +1076,387 @@ function renderLeads(container){
 // ============================================
 const dayLabels=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 function renderContent(container){
+  const todayISO = new Date().toISOString().split('T')[0];
+  const nowTime  = new Date().toTimeString().slice(0,5);
   container.innerHTML=`<div class="view">
-    <div class="view-header"><div><h1 class="view-title">Calendario de contenido</h1><p class="view-subtitle">Programá tus posts founder para HR & CEOs en LATAM</p></div><div class="view-actions"><button class="btn btn-primary" id="newPostBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo post</button></div></div>
+    <div class="view-header"><div><h1 class="view-title">Contenido</h1><p class="view-subtitle">Publicá y programá posts en LinkedIn desde acá</p></div><div class="view-actions"><button class="btn btn-primary" id="newPostBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nuevo post</button></div></div>
+
+    <!-- Post Modal -->
+    <div id="postModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#11141e;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative">
+        <button onclick="document.getElementById('postModal').style.display='none'" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.07);border:none;color:var(--text-1);font-size:16px;cursor:pointer">✕</button>
+        <div style="font-size:19px;font-weight:800;margin-bottom:4px">✍️ Nuevo post en LinkedIn</div>
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:22px">Publicá ahora o programá para después</div>
+
+        <!-- Account selector -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Cuenta de LinkedIn</div>
+          <div id="post-accounts-list" style="display:flex;flex-direction:column;gap:8px"><div style="font-size:13px;color:var(--text-3);padding:8px">Cargando cuentas...</div></div>
+          <input type="hidden" id="post-account-id">
+        </div>
+
+        <!-- Content -->
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Contenido del post</div>
+        <textarea id="post-content-txt" rows="7" style="width:100%;padding:12px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:9px;color:var(--text-0);font-size:14px;line-height:1.6;resize:vertical;font-family:inherit" placeholder="Escribí tu post acá...
+
+Podés usar saltos de línea y emojis 🚀
+
+#hashtags #LinkedIn"></textarea>
+        <div id="post-char-count" style="font-size:11px;color:var(--text-3);text-align:right;margin-top:4px;margin-bottom:16px">0 / 3000</div>
+
+        <!-- Schedule toggle -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:10px;padding:14px;margin-bottom:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:600">📅 Programar publicación</div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-2)">
+              <span id="schedToggleLbl">Publicar ahora</span>
+              <div style="position:relative;width:38px;height:22px" onclick="toggleSchedule()">
+                <input type="checkbox" id="schedToggle" style="opacity:0;position:absolute;width:0;height:0">
+                <div id="schedTrack" style="position:absolute;inset:0;background:var(--bg-3);border-radius:22px;transition:.2s"></div>
+                <div id="schedThumb" style="position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>
+              </div>
+            </label>
+          </div>
+          <div id="schedFields" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:5px">FECHA</div>
+              <input type="date" id="post-date" value="${todayISO}" min="${todayISO}" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-2);font-weight:600;margin-bottom:5px">HORA</div>
+              <input type="time" id="post-time" value="${nowTime}" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+          <button id="post-publish-btn" onclick="publishPostNow()" style="flex:1;padding:13px;background:linear-gradient(135deg,#0077b5,#00a0dc);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:700;cursor:pointer" id="post-action-btn">🚀 Publicar ahora en LinkedIn</button>
+          <button onclick="savePostLocal()" style="padding:13px 18px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:9px;color:var(--text-1);font-size:13px;font-weight:600;cursor:pointer">💾 Borrador</button>
+        </div>
+        <div id="post-modal-msg" style="font-size:12px;text-align:center;margin-top:12px"></div>
+      </div>
+    </div>
+
     <div class="content-layout">
       <div class="calendar">
-        <div class="calendar-head"><div><div class="calendar-title">Abril 2026</div><div class="card-subtitle">5 posts programados</div></div><div class="calendar-nav"><button class="cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button><button class="cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>
+        <div class="calendar-head"><div><div class="calendar-title">Abril 2026</div><div class="card-subtitle" id="postCountLabel">0 posts</div></div><div class="calendar-nav"><button class="cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button><button class="cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>
         <div class="calendar-grid">${dayLabels.map(d=>`<div class="cal-day-label">${d}</div>`).join('')}${DATA.calendarDays.map(d=>{const cls=['cal-day'];if(d.out)cls.push('out');if(d.today)cls.push('today');return `<div class="${cls.join(' ')}">${d.n}${d.scheduled?`<span class="cal-dot ${d.scheduled}"></span>`:''}</div>`;}).join('')}</div>
       </div>
       <div class="card">
-        <div class="card-title">Próximos posts</div><div class="card-subtitle">En los próximos 14 días</div>
-        <div class="posts-list">${DATA.scheduledPosts.map(p=>`<div class="post-item"><div class="post-date">📅 ${p.date}</div><div class="post-text">${p.text}</div><div class="post-foot"><span class="post-type">${p.type}</span><div class="post-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button></div></div></div>`).join('')}</div>
+        <div class="card-title">Posts publicados / programados</div>
+        <div class="card-subtitle" style="margin-bottom:14px">Tu historial de contenido</div>
+        <div class="posts-list" id="postsList"></div>
       </div>
     </div>
   </div>`;
-  container.querySelector('#newPostBtn').addEventListener('click',()=>toast('Editor de posts próximamente ✨','info'));
+
+  document.getElementById('newPostBtn').addEventListener('click', openPostModal);
+  document.getElementById('post-content-txt').addEventListener('input', function(){
+    const n = this.value.length;
+    const el = document.getElementById('post-char-count');
+    el.textContent = n + ' / 3000';
+    el.style.color = n > 2800 ? 'var(--neon-red)' : n > 2500 ? 'var(--neon-amber)' : 'var(--text-3)';
+  });
+  loadContentPosts();
 }
 
+let _schedEnabled = false;
+function toggleSchedule() {
+  _schedEnabled = !_schedEnabled;
+  const track = document.getElementById('schedTrack');
+  const thumb = document.getElementById('schedThumb');
+  const lbl   = document.getElementById('schedToggleLbl');
+  const fields = document.getElementById('schedFields');
+  const btn   = document.getElementById('post-publish-btn');
+  if (track)  track.style.background  = _schedEnabled ? 'var(--neon-blue)' : 'var(--bg-3)';
+  if (thumb)  thumb.style.transform   = _schedEnabled ? 'translateX(16px)' : 'none';
+  if (lbl)    lbl.textContent          = _schedEnabled ? 'Programado' : 'Publicar ahora';
+  if (fields) fields.style.display    = _schedEnabled ? 'grid' : 'none';
+  if (btn)    btn.textContent          = _schedEnabled ? '📅 Programar post' : '🚀 Publicar ahora en LinkedIn';
+}
+
+async function openPostModal() {
+  _schedEnabled = false;
+  const modal = document.getElementById('postModal');
+  modal.style.display = 'flex';
+  document.getElementById('post-modal-msg').textContent = '';
+  document.getElementById('post-account-id').value = '';
+  // Reset toggle
+  const track = document.getElementById('schedTrack');
+  const thumb = document.getElementById('schedThumb');
+  const lbl   = document.getElementById('schedToggleLbl');
+  const fields = document.getElementById('schedFields');
+  const btn   = document.getElementById('post-publish-btn');
+  if (track)  track.style.background  = 'var(--bg-3)';
+  if (thumb)  thumb.style.transform   = 'none';
+  if (lbl)    lbl.textContent          = 'Publicar ahora';
+  if (fields) fields.style.display    = 'none';
+  if (btn)    btn.textContent          = '🚀 Publicar ahora en LinkedIn';
+
+  // Load accounts
+  const listEl = document.getElementById('post-accounts-list');
+  try {
+    const r = await fetch(LI_API + '/accounts');
+    const accounts = await r.json();
+    if (Array.isArray(accounts) && accounts.length) {
+      listEl.innerHTML = accounts.map(a => `
+        <div onclick="selectPostAccount('${a.id}','${a.name}')" id="pac-${a.id}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg-2);border:2px solid var(--glass-border);border-radius:10px;cursor:pointer;transition:all .15s">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0077b5,#00a0dc);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${a.initials||a.name?.slice(0,2)||'LI'}</div>
+          <div><div style="font-size:13px;font-weight:600">${a.name||'Tu cuenta LinkedIn'}</div><div style="font-size:11px;color:#10b981">● Activa · ${a.stats?.actionsToday||0} acciones hoy</div></div>
+          <div style="margin-left:auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--glass-border)" id="pac-dot-${a.id}"></div>
+        </div>`).join('');
+      // Auto-select first
+      selectPostAccount(accounts[0].id, accounts[0].name);
+    } else {
+      listEl.innerHTML = `<div style="padding:12px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.2);border-radius:8px;font-size:12px;color:var(--neon-amber)">⚠️ Sin cuentas conectadas — ir a <strong>Conectores</strong> y pegar tu cookie li_at</div>`;
+    }
+  } catch {
+    listEl.innerHTML = `<div style="font-size:12px;color:var(--neon-amber)">⚠️ Backend no disponible — iniciá node server.js</div>`;
+  }
+}
+
+function selectPostAccount(id, name) {
+  document.getElementById('post-account-id').value = id;
+  // Highlight selection
+  document.querySelectorAll('[id^="pac-"]').forEach(el => {
+    if (el.id === 'pac-'+id) {
+      el.style.borderColor = 'var(--neon-blue)';
+      el.style.background  = 'rgba(79,140,255,0.07)';
+    } else if (!el.id.startsWith('pac-dot-')) {
+      el.style.borderColor = 'var(--glass-border)';
+      el.style.background  = 'var(--bg-2)';
+    }
+  });
+  const dot = document.getElementById('pac-dot-'+id);
+  if (dot) { dot.style.background = 'var(--neon-blue)'; dot.style.borderColor = 'var(--neon-blue)'; }
+}
+
+async function publishPostNow() {
+  const accountId = document.getElementById('post-account-id')?.value;
+  const text = document.getElementById('post-content-txt')?.value.trim();
+  const btn = document.getElementById('post-publish-btn');
+  const msg = document.getElementById('post-modal-msg');
+
+  if (!accountId) { msg.style.color='var(--neon-red)'; msg.textContent='Seleccioná una cuenta de LinkedIn'; return; }
+  if (!text || text.length < 10) { msg.style.color='var(--neon-red)'; msg.textContent='El post necesita al menos 10 caracteres'; return; }
+  if (text.length > 3000) { msg.style.color='var(--neon-red)'; msg.textContent='Máx 3000 caracteres'; return; }
+
+  // Scheduled mode — save locally
+  if (_schedEnabled) {
+    const date = document.getElementById('post-date')?.value;
+    const time = document.getElementById('post-time')?.value;
+    const label = new Date(date + 'T' + time).toLocaleString('es-AR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    DATA.scheduledPosts.unshift({ id:'p-'+Date.now(), date:'📅 ' + label, type:'Programado', text, scheduled:true });
+    document.getElementById('postModal').style.display = 'none';
+    document.getElementById('post-content-txt').value = '';
+    toast('Post programado para ' + label, 'success', 5000);
+    loadContentPosts();
+    return;
+  }
+
+  // Publish now
+  btn.disabled = true;
+  btn.textContent = 'Publicando en LinkedIn... (30-60 seg)';
+  msg.textContent = '';
+
+  try {
+    const r = await fetch(LI_API + '/automations/run-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId, action: 'publishPost', text })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      DATA.scheduledPosts.unshift({ id:'p-'+Date.now(), date:'Publicado · ' + new Date().toLocaleString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}), type:'Post directo', text });
+      document.getElementById('postModal').style.display = 'none';
+      document.getElementById('post-content-txt').value = '';
+      toast('✅ Post publicado en LinkedIn', 'success', 5000);
+      loadContentPosts();
+    } else {
+      msg.style.color = 'var(--neon-red)';
+      msg.textContent = '❌ ' + (d.error || 'Error al publicar');
+    }
+  } catch(err) {
+    msg.style.color = 'var(--neon-red)';
+    msg.textContent = '❌ ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Publicar ahora en LinkedIn';
+  }
+}
+
+function savePostLocal() {
+  const text = document.getElementById('post-content-txt')?.value.trim();
+  if (!text || text.length < 5) { const m=document.getElementById('post-modal-msg'); if(m){m.style.color='var(--neon-red)';m.textContent='Escribí algo primero';} return; }
+  DATA.scheduledPosts.unshift({ id:'p-'+Date.now(), date:'Borrador · ' + new Date().toLocaleDateString('es-AR'), type:'Borrador', text });
+  document.getElementById('postModal').style.display = 'none';
+  document.getElementById('post-content-txt').value = '';
+  toast('Borrador guardado', 'info');
+  loadContentPosts();
+}
+
+function loadContentPosts() {
+  const list = document.getElementById('postsList');
+  const label = document.getElementById('postCountLabel');
+  if (!list) return;
+  if (!DATA.scheduledPosts.length) {
+    list.innerHTML = `<div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:10px">✍️</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Todavía no publicaste nada</div><div style="font-size:12px;color:var(--text-3)">Clic en "Nuevo post" para empezar</div></div>`;
+    if (label) label.textContent = '0 posts';
+    return;
+  }
+  if (label) label.textContent = DATA.scheduledPosts.length + ' post(s)';
+  list.innerHTML = DATA.scheduledPosts.map(p=>`<div class="post-item">
+    <div class="post-date">${p.date}</div>
+    <div class="post-text">${p.text}</div>
+    <div class="post-foot"><span class="post-type" style="${p.type==='Programado'?'background:rgba(79,140,255,.12);color:var(--neon-blue)':p.type==='Borrador'?'background:rgba(251,191,36,.12);color:var(--neon-amber)':''}">${p.type}</span>
+    <div class="post-actions"><button onclick="DATA.scheduledPosts=DATA.scheduledPosts.filter(x=>x.id!=='${p.id}');loadContentPosts()" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button></div></div>
+  </div>`).join('');
+}
+
+
+
+    <!-- Post Modal -->
+    <div id="postModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:500;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#11141e;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px;width:100%;max-width:580px;position:relative">
+        <button onclick="document.getElementById('postModal').style.display='none'" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.07);border:none;color:var(--text-1);font-size:16px;cursor:pointer">✕</button>
+        <div style="font-size:19px;font-weight:800;margin-bottom:4px">✍️ Nuevo post en LinkedIn</div>
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:20px">Se publica en tu cuenta real usando Playwright</div>
+
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Cuenta</div>
+        <select id="post-account-sel" style="width:100%;padding:10px 13px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:9px;color:var(--text-0);font-size:13px;margin-bottom:14px"></select>
+
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Contenido del post</div>
+        <textarea id="post-content-txt" rows="8" style="width:100%;padding:12px 14px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:9px;color:var(--text-0);font-size:14px;line-height:1.6;resize:vertical;font-family:inherit" placeholder="Escribí tu post acá...
+
+Podés usar saltos de línea y emojis 🚀
+
+#hashtags #LinkedIn"></textarea>
+        <div id="post-char-count" style="font-size:11px;color:var(--text-3);text-align:right;margin-top:4px">0 / 3000</div>
+
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button id="post-publish-btn" onclick="publishPostNow()" style="flex:1;padding:13px;background:linear-gradient(135deg,#0077b5,#00a0dc);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:700;cursor:pointer">🚀 Publicar ahora en LinkedIn</button>
+          <button onclick="savePostLocal()" style="padding:13px 18px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:9px;color:var(--text-1);font-size:13px;font-weight:600;cursor:pointer">💾 Guardar borrador</button>
+        </div>
+        <div id="post-modal-msg" style="font-size:12px;text-align:center;margin-top:12px"></div>
+      </div>
+    </div>
+
+    <div class="content-layout">
+      <div class="calendar">
+        <div class="calendar-head"><div><div class="calendar-title">Abril 2026</div><div class="card-subtitle" id="postCountLabel">Cargando posts...</div></div><div class="calendar-nav"><button class="cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button><button class="cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button></div></div>
+        <div class="calendar-grid">${dayLabels.map(d=>`<div class="cal-day-label">${d}</div>`).join('')}${DATA.calendarDays.map(d=>{const cls=['cal-day'];if(d.out)cls.push('out');if(d.today)cls.push('today');return `<div class="${cls.join(' ')}">${d.n}${d.scheduled?`<span class="cal-dot ${d.scheduled}"></span>`:''}</div>`;}).join('')}</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Posts publicados</div><div class="card-subtitle" style="margin-bottom:14px">Historial de tu contenido en LinkedIn</div>
+        <div class="posts-list" id="postsList"><div style="text-align:center;padding:30px;color:var(--text-3);font-size:13px">Cargando...</div></div>
+      </div>
+    </div>
+  </div>`;
+
+  // Open modal
+  document.getElementById('newPostBtn').addEventListener('click', openPostModal);
+
+  // Char counter
+  document.getElementById('post-content-txt').addEventListener('input', function(){
+    document.getElementById('post-char-count').textContent = this.value.length + ' / 3000';
+  });
+
+  loadContentPosts();
+}
+
+async function openPostModal() {
+  const modal = document.getElementById('postModal');
+  modal.style.display = 'flex';
+  document.getElementById('post-modal-msg').textContent = '';
+  // Load accounts
+  try {
+    const r = await fetch(LI_API + '/accounts');
+    const accounts = await r.json();
+    const sel = document.getElementById('post-account-sel');
+    if (Array.isArray(accounts) && accounts.length) {
+      sel.innerHTML = accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    } else {
+      sel.innerHTML = '<option value="">— Sin cuentas. Ir a Conectores —</option>';
+    }
+  } catch {
+    const sel = document.getElementById('post-account-sel');
+    if (sel) sel.innerHTML = '<option value="">— Backend no disponible —</option>';
+  }
+}
+
+async function publishPostNow() {
+  const accountId = document.getElementById('post-account-sel')?.value;
+  const text = document.getElementById('post-content-txt')?.value.trim();
+  const btn = document.getElementById('post-publish-btn');
+  const msg = document.getElementById('post-modal-msg');
+
+  if (!accountId) { msg.style.color='var(--neon-red)'; msg.textContent='Primero conectá una cuenta en Conectores'; return; }
+  if (!text || text.length < 10) { msg.style.color='var(--neon-red)'; msg.textContent='El post necesita al menos 10 caracteres'; return; }
+  if (text.length > 3000) { msg.style.color='var(--neon-red)'; msg.textContent='Máx 3000 caracteres'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Publicando en LinkedIn... (puede tardar 30-60 seg)';
+  msg.textContent = '';
+
+  try {
+    const r = await fetch(LI_API + '/automations/run-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accountId, action: 'publishPost', text })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      // Save locally
+      DATA.scheduledPosts.unshift({ id:'p-'+Date.now(), date:'Publicado ahora', type:'Post directo', text });
+      document.getElementById('postModal').style.display = 'none';
+      document.getElementById('post-content-txt').value = '';
+      toast('✅ Post publicado exitosamente en LinkedIn', 'success', 5000);
+      loadContentPosts();
+    } else {
+      msg.style.color = 'var(--neon-red)';
+      msg.textContent = '❌ ' + (d.error || 'Error al publicar');
+    }
+  } catch(err) {
+    msg.style.color = 'var(--neon-red)';
+    msg.textContent = '❌ Backend no disponible: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🚀 Publicar ahora en LinkedIn';
+  }
+}
+
+function savePostLocal() {
+  const text = document.getElementById('post-content-txt')?.value.trim();
+  if (!text || text.length < 5) return;
+  DATA.scheduledPosts.unshift({ id:'p-'+Date.now(), date:'Borrador · ' + new Date().toLocaleDateString('es-AR'), type:'Borrador', text });
+  document.getElementById('postModal').style.display = 'none';
+  document.getElementById('post-content-txt').value = '';
+  toast('Borrador guardado', 'info');
+  loadContentPosts();
+}
+
+function loadContentPosts() {
+  const list = document.getElementById('postsList');
+  const label = document.getElementById('postCountLabel');
+  if (!list) return;
+  if (!DATA.scheduledPosts.length) {
+    list.innerHTML = `<div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:10px">✍️</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Todavía no publicaste nada</div><div style="font-size:12px;color:var(--text-3)">Clic en "Nuevo post" para publicar en LinkedIn</div></div>`;
+    if (label) label.textContent = '0 posts publicados';
+    return;
+  }
+  if (label) label.textContent = DATA.scheduledPosts.length + ' post(s)';
+  list.innerHTML = DATA.scheduledPosts.map(p=>`<div class="post-item">
+    <div class="post-date">📅 ${p.date}</div>
+    <div class="post-text">${p.text}</div>
+    <div class="post-foot"><span class="post-type">${p.type}</span><div class="post-actions">
+      <button onclick="this.closest('.post-item').remove();DATA.scheduledPosts=DATA.scheduledPosts.filter(x=>x.id!=='${p.id}');document.getElementById('postCountLabel').textContent=DATA.scheduledPosts.length+' post(s)'" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button>
+    </div></div>
+  </div>`).join('');
+}
+
+
 // ============================================
+
 // SKILLS VIEW
 // ============================================
 function renderSkills(container) {
@@ -888,14 +1504,36 @@ function renderSkills(container) {
 // ============================================
 // CONNECTORS VIEW
 // ============================================
+const LI_API = 'http://localhost:8000/api';
 function renderConnectors(container) {
   container.innerHTML = `<div class="view">
     <div class="view-header">
-      <div><h1 class="view-title">Conectores</h1><p class="view-subtitle">Integraciones con CRM, automatización y notificaciones</p></div>
+      <div><h1 class="view-title">Conectores</h1><p class="view-subtitle">Tu cuenta LinkedIn + integraciones CRM y automatización</p></div>
       <div class="view-actions">
         <button class="btn btn-primary" onclick="toast('Sincronizando todas las integraciones...','success')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>Sincronizar todo</button>
       </div>
     </div>
+
+    <!-- LinkedIn Account Section -->
+    <div class="card" style="margin-bottom:24px;border-color:rgba(0,119,181,0.3);box-shadow:0 0 24px rgba(0,119,181,0.1)" id="liAccountSection">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#0077b5,#00a0dc);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 20px rgba(0,119,181,0.4);flex-shrink:0">💼</div>
+        <div><div style="font-size:16px;font-weight:700">Tu cuenta de LinkedIn</div><div style="font-size:12px;color:var(--text-2)">Conectá tu cuenta para habilitar likes, posts, comentarios y conexiones automáticas</div></div>
+      </div>
+      <div id="liAccountStatus"><div style="font-size:13px;color:var(--text-3)">Cargando cuentas...</div></div>
+      <div id="liConnectForm" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--glass-border)">
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Pegar cookie li_at de LinkedIn</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;padding:10px;background:rgba(0,119,181,0.07);border-radius:8px;border:1px solid rgba(0,119,181,0.15);line-height:1.6">
+          1. Abrí <strong>linkedin.com</strong> en Chrome → <strong>F12</strong><br>
+          2. Application → Cookies → https://www.linkedin.com<br>
+          3. Buscá <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:3px;color:#67e8f9">li_at</code> → copiá el <strong>Value</strong> completo
+        </div>
+        <textarea id="liCookieInput" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-0);font-family:monospace;font-size:12px;resize:vertical;min-height:70px" placeholder="AQEDATxxxxxxxxxxxxxxx..."></textarea>
+        <button id="liConnectBtn" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,#0077b5,#00a0dc);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;cursor:pointer" onclick="connectLinkedIn()">🔗 Conectar cuenta de LinkedIn</button>
+        <div id="liConnectMsg" style="font-size:12px;margin-top:10px;text-align:center"></div>
+      </div>
+    </div>
+
     <div class="webhook-banner">
       <div class="webhook-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
       <div style="flex:1">
@@ -932,6 +1570,241 @@ function renderConnectors(container) {
       </div>`).join('')}
     </div>
   </div>`;
+  loadLinkedInAccounts();
+}
+
+// ── LinkedIn account helpers ─────────────────────────────────────────────────
+async function loadLinkedInAccounts() {
+  const status = document.getElementById('liAccountStatus');
+  const form   = document.getElementById('liConnectForm');
+  if (!status) return;
+  try {
+    const r = await fetch(LI_API + '/accounts', { signal: AbortSignal.timeout(3000) });
+    const accounts = await r.json();
+    if (!Array.isArray(accounts) || !accounts.length) {
+      status.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hay cuentas conectadas aún.</div>';
+      if (form) form.style.display = 'block';
+      return;
+    }
+    status.innerHTML = accounts.map(a => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:10px;margin-bottom:8px">
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0077b5,#00a0dc);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${a.initials||'?'}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${a.name}</div>
+          <div style="font-size:11px;color:#10b981;margin-top:2px">● Activa · ${(a.stats&&a.stats.actionsToday)||0} acciones hoy</div>
+        </div>
+        <button onclick="deleteLinkedInAccount('${a.id}')" style="padding:5px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:6px;color:#f87171;font-size:11px;cursor:pointer">Desconectar</button>
+      </div>`).join('');
+    if (form) form.style.display = accounts.length < 3 ? 'block' : 'none';
+    if (form && accounts.length >= 3) {
+      status.innerHTML += '<button onclick="document.getElementById(\'liConnectForm\').style.display=\'block\'" style="font-size:12px;color:var(--neon-blue);cursor:pointer;background:none;border:none">+ Agregar otra cuenta</button>';
+    }
+  } catch (err) {
+    status.innerHTML = '<div style="font-size:12px;color:var(--neon-amber)">⚠️ Backend no disponible. Corré "node server.js" en la terminal.</div>';
+    if (form) form.style.display = 'none';
+  }
+}
+
+async function connectLinkedIn() {
+  const cookie = document.getElementById('liCookieInput')?.value.trim();
+  const msg    = document.getElementById('liConnectMsg');
+  const btn    = document.getElementById('liConnectBtn');
+  if (!cookie || cookie.length < 50) { if(msg){msg.style.color='var(--neon-red)';msg.textContent='Pegá el valor completo de li_at (empieza con AQE...)';} return; }
+  if(btn){btn.disabled=true;btn.textContent='Verificando sesión en LinkedIn...';}
+  if(msg){msg.textContent='';}
+  try {
+    const r = await fetch(LI_API + '/accounts/connect', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ cookie }) });
+    const d = await r.json();
+    if (!r.ok || d.error) { if(msg){msg.style.color='var(--neon-red)';msg.textContent='Error: '+(d.error||'Cookie invalida');} return; }
+    toast('Cuenta de LinkedIn conectada: ' + d.name, 'success', 4000);
+    if(document.getElementById('liCookieInput')) document.getElementById('liCookieInput').value='';
+    loadLinkedInAccounts();
+  } catch(err) {
+    if(msg){msg.style.color='var(--neon-red)';msg.textContent='Error: '+err.message;}
+  } finally {
+    if(btn){btn.disabled=false;btn.textContent='🔗 Conectar cuenta de LinkedIn';}
+  }
+}
+
+async function deleteLinkedInAccount(id) {
+  if (!confirm('Desconectar esta cuenta?')) return;
+  try { await fetch(LI_API + '/accounts/' + id, { method:'DELETE' }); loadLinkedInAccounts(); } catch {}
+}
+
+// ============================================
+// AUTOMATIONS VIEW
+// ============================================
+function renderAutomations(container) {
+  container.innerHTML = `<div class="view">
+    <div class="view-header">
+      <div><h1 class="view-title">Automatizaciones</h1><p class="view-subtitle">Ejecutá acciones reales en LinkedIn con Playwright · Requiere backend local</p></div>
+      <div class="view-actions"><div id="autoStatus" style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px"><div style="width:8px;height:8px;border-radius:50%;background:#f59e0b" id="autoDot"></div><span id="autoStatusTxt">Verificando...</span></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+
+      <!-- LIKE -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:42px;height:42px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👍</div>
+          <div><div style="font-size:15px;font-weight:700">Dar Likes</div><div style="font-size:12px;color:var(--text-2)">Like en posts del feed o URL específica</div></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Cuenta</div>
+        <select id="auto-like-acc" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px"></select>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;margin-top:12px">Cantidad de likes</div>
+        <input id="auto-like-n" type="number" value="5" min="1" max="20" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px">
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Se van a dar likes en tu feed de LinkedIn (máx 20/día)</div>
+        <button class="btn btn-primary" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#2563eb,#3b82f6)" id="btn-auto-like" onclick="runAutoAction('like')">👍 Dar Likes ahora</button>
+        <div class="auto-result" id="res-auto-like" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px"></div>
+      </div>
+
+      <!-- POST -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:42px;height:42px;border-radius:10px;background:rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✍️</div>
+          <div><div style="font-size:15px;font-weight:700">Publicar Post</div><div style="font-size:12px;color:var(--text-2)">Publica contenido en tu perfil de LinkedIn</div></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Cuenta</div>
+        <select id="auto-post-acc" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px"></select>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;margin-top:12px">Contenido del post</div>
+        <textarea id="auto-post-txt" rows="5" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Escribe tu post aqui...&#10;&#10;Podes usar saltos de linea y emojis 🚀&#10;&#10;#hashtags #LinkedIn"></textarea>
+        <button class="btn btn-primary" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#7c3aed,#8b5cf6)" id="btn-auto-post" onclick="runAutoAction('post')">✍️ Publicar en LinkedIn</button>
+        <div class="auto-result" id="res-auto-post" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px"></div>
+      </div>
+
+      <!-- COMMENT -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:42px;height:42px;border-radius:10px;background:rgba(234,179,8,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💬</div>
+          <div><div style="font-size:15px;font-weight:700">Comentar Post</div><div style="font-size:12px;color:var(--text-2)">Deja un comentario en un post específico</div></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Cuenta</div>
+        <select id="auto-comment-acc" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px"></select>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;margin-top:12px">URL del post</div>
+        <input id="auto-comment-url" type="url" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px" placeholder="https://www.linkedin.com/posts/...">
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;margin-top:12px">Comentario</div>
+        <textarea id="auto-comment-txt" rows="2" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Excelente contenido! Muy valioso para el sector..."></textarea>
+        <button class="btn btn-primary" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#b45309,#d97706)" id="btn-auto-comment" onclick="runAutoAction('comment')">💬 Comentar ahora</button>
+        <div class="auto-result" id="res-auto-comment" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px"></div>
+      </div>
+
+      <!-- CONNECT -->
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:42px;height:42px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🤝</div>
+          <div><div style="font-size:15px;font-weight:700">Conectar con usuario</div><div style="font-size:12px;color:var(--text-2)">Envía solicitud de conexión con nota</div></div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Cuenta</div>
+        <select id="auto-connect-acc" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px"></select>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;margin-top:12px">URL del perfil</div>
+        <input id="auto-connect-url" type="url" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px" placeholder="https://www.linkedin.com/in/nombre/">
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;margin-top:12px">Nota opcional</div>
+        <textarea id="auto-connect-note" rows="2" style="width:100%;padding:9px 12px;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-0);font-size:13px;resize:vertical" placeholder="Hola, vi tu perfil y me gustaria conectar..."></textarea>
+        <button class="btn btn-primary" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#059669,#10b981)" id="btn-auto-connect" onclick="runAutoAction('connect')">🤝 Enviar solicitud</button>
+        <div class="auto-result" id="res-auto-connect" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px"></div>
+      </div>
+
+    </div>
+  </div>`;
+  checkAutoStatus();
+  fillAutoAccounts();
+}
+
+async function checkAutoStatus() {
+  const dot = document.getElementById('autoDot');
+  const txt = document.getElementById('autoStatusTxt');
+  if (!dot) return;
+  try {
+    const r = await fetch(LI_API + '/health', { signal: AbortSignal.timeout(3000) });
+    const d = await r.json();
+    if (d.automationsReady) {
+      dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 6px #10b981';
+      txt.textContent = 'Backend listo · Playwright activo · ' + (d.activeAccounts||0) + ' cuenta(s)';
+    } else {
+      dot.style.background = '#f59e0b';
+      txt.textContent = 'Backend conectado pero sin Playwright';
+    }
+  } catch {
+    dot.style.background = '#ef4444';
+    txt.textContent = 'Backend no disponible — corré node server.js';
+  }
+}
+
+async function fillAutoAccounts() {
+  try {
+    const r = await fetch(LI_API + '/accounts');
+    const accounts = await r.json();
+    ['like','post','comment','connect'].forEach(k => {
+      const sel = document.getElementById('auto-' + k + '-acc');
+      if (!sel) return;
+      if (!Array.isArray(accounts) || !accounts.length) {
+        sel.innerHTML = '<option value="">— Sin cuentas. Ir a Conectores —</option>';
+      } else {
+        sel.innerHTML = accounts.map(a => '<option value="' + a.id + '">' + a.name + (a.status==='active'?' ✅':' ⚠️') + '</option>').join('');
+      }
+    });
+  } catch {}
+}
+
+async function runAutoAction(type) {
+  const map = { like:'like', post:'post', comment:'comment', connect:'connect' };
+  const accId  = document.getElementById('auto-'+type+'-acc')?.value;
+  const btn    = document.getElementById('btn-auto-'+type);
+  const resEl  = document.getElementById('res-auto-'+type);
+  if (!accId) { showAutoResult(type,'Primero conectá una cuenta en Conectores',false); return; }
+
+  let body = { accountId: accId };
+  if (type==='like') {
+    body.action = 'likeFromFeed';
+    body.limit  = parseInt(document.getElementById('auto-like-n')?.value)||5;
+  } else if (type==='post') {
+    const txt = document.getElementById('auto-post-txt')?.value.trim();
+    if (!txt||txt.length<10){showAutoResult(type,'El post necesita al menos 10 caracteres',false);return;}
+    body.action = 'publishPost'; body.text = txt;
+  } else if (type==='comment') {
+    const url = document.getElementById('auto-comment-url')?.value.trim();
+    const txt = document.getElementById('auto-comment-txt')?.value.trim();
+    if (!url){showAutoResult(type,'Ingresa la URL del post',false);return;}
+    if (!txt){showAutoResult(type,'Escribi un comentario',false);return;}
+    body.action='commentPost'; body.postUrl=url; body.text=txt;
+  } else if (type==='connect') {
+    const url = document.getElementById('auto-connect-url')?.value.trim();
+    if (!url||!url.includes('linkedin.com/in/')){showAutoResult(type,'URL de perfil invalida (linkedin.com/in/...)',false);return;}
+    body.action='sendConnectionRequest'; body.profileUrl=url;
+    body.note = document.getElementById('auto-connect-note')?.value.trim()||'';
+  }
+
+  if(btn){btn.disabled=true;btn.textContent='Ejecutando en LinkedIn... (30-60 seg)';}
+  if(resEl){resEl.style.display='none';}
+
+  try {
+    const r = await fetch(LI_API+'/automations/run-action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    if (d.ok||(d.liked!==undefined&&d.liked>=0)) {
+      const msg = d.liked!==undefined ? d.liked+' likes dados en el feed' : 'Accion completada exitosamente';
+      showAutoResult(type,'✅ '+msg,true);
+      toast(msg,'success');
+    } else {
+      showAutoResult(type,'❌ '+(d.error||'Error desconocido'),false);
+    }
+  } catch(err) {
+    showAutoResult(type,'❌ '+err.message,false);
+  } finally {
+    if (btn) {
+      btn.disabled=false;
+      const labels={like:'👍 Dar Likes ahora',post:'✍️ Publicar en LinkedIn',comment:'💬 Comentar ahora',connect:'🤝 Enviar solicitud'};
+      btn.textContent=labels[type]||'Ejecutar';
+    }
+  }
+}
+
+function showAutoResult(type, msg, ok) {
+  const el = document.getElementById('res-auto-'+type);
+  if (!el) return;
+  el.style.display='block';
+  el.style.background = ok ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+  el.style.border = ok ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(239,68,68,0.25)';
+  el.style.color = ok ? '#34d399' : '#f87171';
+  el.textContent = msg;
 }
 
 // ============================================
@@ -997,7 +1870,7 @@ function renderAdmin(container) {
 // ============================================
 // ROUTER + BOOTSTRAP
 // ============================================
-const views = { dashboard:renderDashboard, campaigns:renderCampaigns, inbox:renderInbox, leads:renderLeads, content:renderContent, skills:renderSkills, connectors:renderConnectors, admin:renderAdmin };
+const views = { dashboard:renderDashboard, campaigns:renderCampaigns, inbox:renderInbox, leads:renderLeads, content:renderContent, skills:renderSkills, connectors:renderConnectors, automations:renderAutomations, admin:renderAdmin };
 const container = document.getElementById('viewContainer');
 
 function navigate(name){
