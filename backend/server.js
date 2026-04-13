@@ -48,6 +48,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:8000',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
 ].filter(Boolean);
 
 app.use(cors({
@@ -55,6 +57,7 @@ app.use(cors({
     if (!origin) return callback(null, true);                          // file://, curl, Postman
     if (origin.endsWith('.netlify.app')) return callback(null, true);  // cualquier deploy Netlify
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    console.warn(`[CORS] Origen no permitido: ${origin}`);
     callback(new Error(`CORS: origen no permitido: ${origin}`));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
