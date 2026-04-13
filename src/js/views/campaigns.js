@@ -1,5 +1,5 @@
 import * as api from '../services/api.js';
-import { toast } from '../ui.js';
+import { toast, escapeHtml } from '../ui.js';
 
 const STEP_TYPES = ['Visita perfil', 'Conexión', 'Mensaje 1', 'Follow-up'];
 
@@ -43,8 +43,8 @@ function campaignCard(raw) {
     <div class="card campaign-card" data-id="${c.id}">
       <div class="campaign-head">
         <div style="flex:1;">
-          <div class="campaign-name">${c.name}</div>
-          <div class="campaign-desc">${c.description || 'Sin descripción'}</div>
+          <div class="campaign-name">${escapeHtml(c.name)}</div>
+          <div class="campaign-desc">${escapeHtml(c.description || 'Sin descripción')}</div>
         </div>
         <span class="status-pill ${c.status}">${statusLabel}</span>
       </div>

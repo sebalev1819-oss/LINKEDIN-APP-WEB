@@ -17,6 +17,9 @@ import * as mock from '../../data/mock.js';
 
 export const API_BASE = 'http://localhost:8000/api';
 
+/** Whether the API layer is currently using mock data. null = not determined yet. */
+export function isUsingMock() { return _useMock; }
+
 // ── Mode detection ────────────────────────────────────────────────────────────
 let _useMock = null;  // null = not determined yet
 

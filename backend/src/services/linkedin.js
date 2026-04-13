@@ -39,10 +39,17 @@ function buildCookies(liAt) {
   ];
 }
 
-/** Get or create a browser context for a given account */
+/** Get or create a browser context for a given account.
+ *  Always refreshes cookies to avoid stale session issues.
+ */
 async function getContext(accountId, cookie) {
   if (sessions.has(accountId)) {
-    return sessions.get(accountId);
+    const existing = sessions.get(accountId);
+    // Refresh cookies on every call to keep session valid
+    try {
+      await existing.context.addCookies(buildCookies(cookie));
+    } catch {}
+    return existing;
   }
 
   const browser = await chromium.launch({
@@ -63,12 +70,9 @@ async function getContext(accountId, cookie) {
     timezoneId: 'America/Argentina/Buenos_Aires',
   });
 
-  // Inject LinkedIn session cookie
   await context.addCookies(buildCookies(cookie));
 
   const page = await context.newPage();
-
-  // Anti-detection: remove navigator.webdriver
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
   });
@@ -76,6 +80,23 @@ async function getContext(accountId, cookie) {
   const session = { browser, context, page };
   sessions.set(accountId, session);
   return session;
+}
+
+/** Check if Playwright page ended up on login/authwall after navigation.
+ *  If so, close+clear the cached session and throw a user-friendly error.
+ */
+async function checkAuth(accountId, page) {
+  const url = page.url();
+  if (
+    url.includes('/login') ||
+    url.includes('/authwall') ||
+    url.includes('/checkpoint') ||
+    url.includes('serviceLogin')
+  ) {
+    // Kill the bad session so next call starts fresh
+    await closeSession(accountId);
+    throw new Error('Sesión expirada. Actualizá tu cookie li_at en Conectores → Tu cuenta de LinkedIn.');
+  }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -441,7 +462,8 @@ async function sendConnectionRequest(accountId, cookie, profileUrl, note = '') {
 async function likePostsFromFeed(accountId, cookie, limit = 5) {
   try {
     const { page } = await getContext(accountId, cookie);
-    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await checkAuth(accountId, page);
     await humanDelay(2000, 4000);
 
     let liked = 0;
@@ -505,6 +527,159 @@ async function endorseSkill(accountId, cookie, profileUrl) {
   }
 }
 
+// ── Smart Engage: Search & Discovery ─────────────────────────────────────────
+
+/**
+ * Search LinkedIn for profiles matching criteria.
+ * @param {string} accountId
+ * @param {string} cookie
+ * @param {{ keywords, titles, countries }} criteria
+ * @param {number} maxResults — max profiles to return (default 20)
+ * @returns {Promise<{ ok, profiles: Array<{ name, headline, profileUrl, location }> }>}
+ */
+async function searchProfiles(accountId, cookie, criteria, maxResults = 20) {
+  try {
+    const { page } = await getContext(accountId, cookie);
+
+    // Build search query from criteria
+    const queryParts = [];
+    if (criteria.titles?.length) queryParts.push(criteria.titles[0]);
+    if (criteria.keywords?.length) queryParts.push(criteria.keywords.slice(0, 2).join(' '));
+    const query = queryParts.join(' ') || 'HR bienestar';
+
+    const searchUrl = `${LI_BASE}/search/results/people/?keywords=${encodeURIComponent(query)}&origin=GLOBAL_SEARCH_HEADER`;
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await checkAuth(accountId, page);
+    await humanDelay(2000, 4000);
+
+    // Scroll to load results
+    for (let i = 0; i < 3; i++) {
+      await page.evaluate(() => window.scrollBy(0, 600));
+      await humanDelay(1000, 2000);
+    }
+
+    // Extract profile cards
+    const profiles = await page.evaluate((max) => {
+      const results = [];
+      const cards = document.querySelectorAll('.reusable-search__result-container, .entity-result');
+
+      for (const card of cards) {
+        if (results.length >= max) break;
+
+        const linkEl = card.querySelector('a[href*="/in/"]');
+        const nameEl = card.querySelector('.entity-result__title-text a span[aria-hidden="true"], .app-aware-link span[aria-hidden="true"]');
+        const headlineEl = card.querySelector('.entity-result__primary-subtitle, .entity-result__summary');
+        const locationEl = card.querySelector('.entity-result__secondary-subtitle');
+
+        if (!linkEl) continue;
+
+        const href = linkEl.getAttribute('href') || '';
+        const profileUrl = href.split('?')[0]; // Remove query params
+
+        if (!profileUrl.includes('/in/')) continue;
+
+        results.push({
+          name: nameEl?.textContent?.trim() || '',
+          headline: headlineEl?.textContent?.trim() || '',
+          profileUrl: profileUrl.startsWith('http') ? profileUrl : `https://www.linkedin.com${profileUrl}`,
+          location: locationEl?.textContent?.trim() || '',
+        });
+      }
+      return results;
+    }, maxResults);
+
+    console.log(`[LinkedIn] searchProfiles: found ${profiles.length} results for "${query}"`);
+    return { ok: true, profiles };
+  } catch (err) {
+    console.error('[LinkedIn] searchProfiles error:', err.message);
+    return { ok: false, profiles: [], error: err.message };
+  }
+}
+
+/**
+ * Scrape relevant posts from the LinkedIn feed.
+ * @param {string} accountId
+ * @param {string} cookie
+ * @param {string[]} keywords — keywords to filter by
+ * @param {number} limit — max relevant posts (default 10)
+ * @returns {Promise<{ ok, posts: Array<{ author, postUrl, postText, hashtags }> }>}
+ */
+async function scrapeRelevantFeedPosts(accountId, cookie, keywords = [], limit = 10) {
+  try {
+    const { page } = await getContext(accountId, cookie);
+
+    await page.goto(`${LI_BASE}/feed/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await checkAuth(accountId, page);
+    await humanDelay(2000, 4000);
+
+    // Scroll feed to load posts
+    for (let i = 0; i < 5; i++) {
+      await page.evaluate(() => window.scrollBy(0, 800));
+      await humanDelay(1500, 3000);
+    }
+
+    // Extract posts
+    const allPosts = await page.evaluate(() => {
+      const results = [];
+      const posts = document.querySelectorAll('.feed-shared-update-v2, [data-urn*="activity"]');
+
+      for (const post of posts) {
+        if (results.length >= 30) break; // Extract up to 30, filter later
+
+        // Author info
+        const authorLinkEl = post.querySelector('.update-components-actor__meta-link, a[href*="/in/"]');
+        const authorNameEl = post.querySelector('.update-components-actor__name span[aria-hidden="true"], .feed-shared-actor__name span[aria-hidden="true"]');
+        const authorHeadlineEl = post.querySelector('.update-components-actor__description span[aria-hidden="true"], .feed-shared-actor__description span[aria-hidden="true"]');
+
+        // Post content
+        const textEl = post.querySelector('.feed-shared-update-v2__description, .feed-shared-text, .update-components-text');
+        const postText = textEl?.textContent?.trim() || '';
+
+        // Post URL from urn
+        const urn = post.getAttribute('data-urn') || '';
+        const activityId = urn.split(':').pop();
+
+        if (!postText || postText.length < 20) continue;
+
+        // Extract hashtags
+        const hashtagEls = post.querySelectorAll('a[href*="hashtag"]');
+        const hashtags = Array.from(hashtagEls).map(el => '#' + (el.textContent?.trim() || '').replace('#', ''));
+
+        const authorHref = authorLinkEl?.getAttribute('href') || '';
+        const profileUrl = authorHref.split('?')[0];
+
+        results.push({
+          author: {
+            name: authorNameEl?.textContent?.trim() || '',
+            headline: authorHeadlineEl?.textContent?.trim() || '',
+            profileUrl: profileUrl.startsWith('http') ? profileUrl : (profileUrl ? `https://www.linkedin.com${profileUrl}` : ''),
+          },
+          postUrl: activityId ? `${window.location.origin}/feed/update/urn:li:activity:${activityId}` : '',
+          postText: postText.slice(0, 500),
+          hashtags,
+        });
+      }
+      return results;
+    });
+
+    // Filter by keywords
+    const kwLower = keywords.map(k => k.toLowerCase());
+    const relevant = kwLower.length > 0
+      ? allPosts.filter(p => {
+          const text = (p.postText + ' ' + p.hashtags.join(' ')).toLowerCase();
+          return kwLower.some(kw => text.includes(kw));
+        })
+      : allPosts;
+
+    const limited = relevant.slice(0, limit);
+    console.log(`[LinkedIn] scrapeRelevantFeedPosts: ${allPosts.length} total, ${limited.length} relevant for [${keywords.join(', ')}]`);
+    return { ok: true, posts: limited };
+  } catch (err) {
+    console.error('[LinkedIn] scrapeRelevantFeedPosts error:', err.message);
+    return { ok: false, posts: [], error: err.message };
+  }
+}
+
 /** Close browser session for an account */
 async function closeSession(accountId) {
   const session = sessions.get(accountId);
@@ -534,6 +709,8 @@ module.exports = {
   publishPost,
   sendConnectionRequest,
   endorseSkill,
+  searchProfiles,
+  scrapeRelevantFeedPosts,
   closeSession,
   closeAllSessions,
 };

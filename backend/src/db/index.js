@@ -137,6 +137,24 @@ db.exec(`
     time_label TEXT DEFAULT '',
     created_at TEXT DEFAULT (DATETIME('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS discovered_profiles (
+    id             TEXT PRIMARY KEY,
+    name           TEXT NOT NULL,
+    headline       TEXT DEFAULT '',
+    profile_url    TEXT UNIQUE,
+    location       TEXT DEFAULT '',
+    match_score    INTEGER DEFAULT 0,
+    source         TEXT DEFAULT 'search',
+    status         TEXT DEFAULT 'new',
+    automation_id  TEXT REFERENCES automations(id) ON DELETE SET NULL,
+    discovered_at  TEXT DEFAULT (DATETIME('now')),
+    last_action    TEXT DEFAULT '',
+    last_action_at TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_discovered_status ON discovered_profiles(status);
+  CREATE INDEX IF NOT EXISTS idx_discovered_score ON discovered_profiles(match_score DESC);
 `);
 
 // ── Seed automations (solo en el primer arranque) ─────────────────────────────

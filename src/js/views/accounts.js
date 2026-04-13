@@ -4,7 +4,7 @@
  * Método B: cookie li_at — como Waalaxy, Phantombuster, Dux-Soup.
  */
 import * as api from '../services/api.js';
-import { toast } from '../ui.js';
+import { toast, escapeHtml } from '../ui.js';
 
 // ── Health color ──────────────────────────────────────────────────────────────
 function healthColor(pct) {
@@ -30,8 +30,8 @@ function accountCard(acc) {
           <span class="acc-status-dot ${acc.status}"></span>
         </div>
         <div class="acc-info">
-          <div class="acc-name">${acc.name}</div>
-          <div class="acc-headline">${acc.headline}</div>
+          <div class="acc-name">${escapeHtml(acc.name)}</div>
+          <div class="acc-headline">${escapeHtml(acc.headline)}</div>
           <div class="acc-connected">Conectada el ${acc.connectedAt}</div>
         </div>
         <div class="acc-head-actions">
@@ -310,8 +310,7 @@ export async function renderAccounts(container) {
 
   // Connect button
   const openModal = () => openConnectModal(() => {
-    renderAccounts_(api.USE_MOCK ? [...accounts] : accounts);
-    toast('✅ Cuenta de LinkedIn conectada y lista para automatizar!', 'success', 5000);
+    toast('Cuenta de LinkedIn conectada y lista para automatizar!', 'success');
     // Re-fetch to get the newly added account
     api.getAccounts().then(fresh => renderAccounts_(fresh));
   });

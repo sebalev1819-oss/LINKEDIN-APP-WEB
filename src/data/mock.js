@@ -33,12 +33,12 @@ export const chartData = {
 export const weeklyChart = chartData['7d'];
 
 export const activity = [
-  { icon: '🤝', type: 'connection', text: '<strong>María González</strong> aceptó tu solicitud de conexión',          time: 'Hace 3 min'  },
-  { icon: '💬', type: 'message',    text: '<strong>Carlos Ramírez</strong> respondió tu mensaje de seguimiento',      time: 'Hace 18 min' },
-  { icon: '👀', type: 'view',       text: '<strong>Ana Silva</strong> vio tu perfil 2 veces esta semana',             time: 'Hace 1 h'    },
-  { icon: '🚀', type: 'campaign',   text: 'Campaña <strong>HR Directors LATAM</strong> alcanzó 40% de respuesta',    time: 'Hace 2 h'    },
-  { icon: '📝', type: 'post',       text: 'Tu post <strong>"Bienestar como KPI"</strong> superó 5k impresiones',     time: 'Hace 5 h'    },
-  { icon: '✨', type: 'connection', text: '<strong>Juan Pérez</strong> reaccionó a tu publicación',                   time: 'Hace 6 h'    },
+  { icon: '🤝', type: 'connection', text: 'María González aceptó tu solicitud de conexión',          time: 'Hace 3 min'  },
+  { icon: '💬', type: 'message',    text: 'Carlos Ramírez respondió tu mensaje de seguimiento',      time: 'Hace 18 min' },
+  { icon: '👀', type: 'view',       text: 'Ana Silva vio tu perfil 2 veces esta semana',             time: 'Hace 1 h'    },
+  { icon: '🚀', type: 'campaign',   text: 'Campaña HR Directors LATAM alcanzó 40% de respuesta',    time: 'Hace 2 h'    },
+  { icon: '📝', type: 'post',       text: 'Tu post "Bienestar como KPI" superó 5k impresiones',     time: 'Hace 5 h'    },
+  { icon: '✨', type: 'connection', text: 'Juan Pérez reaccionó a tu publicación',                   time: 'Hace 6 h'    },
 ];
 
 export const campaigns = [
@@ -178,18 +178,48 @@ export const scheduledPosts = [
 ];
 
 export const calendarDays = (() => {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const firstDow = new Date(year, month, 1).getDay();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const today = now.getDate();
   const days = [];
-  for (let i = 30; i <= 31; i++) days.push({ n: i, out: true });
-  for (let i = 1; i <= 30; i++) {
-    const scheduled = i === 10 ? 'cyan' : i === 12 ? 'blue' : i === 15 ? 'purple' : i === 22 ? 'cyan' : i === 25 ? 'blue' : null;
-    days.push({ n: i, out: false, today: i === 9, scheduled });
+
+  // Previous month overflow
+  const prevTotal = new Date(year, month, 0).getDate();
+  for (let i = firstDow - 1; i >= 0; i--) days.push({ n: prevTotal - i, out: true });
+
+  // Current month
+  const scheduledDays = new Set([today + 1, today + 3, today + 6, today + 10, today + 14].filter(d => d <= totalDays));
+  const colors = ['cyan', 'blue', 'purple', 'cyan', 'blue'];
+  let ci = 0;
+  for (let d = 1; d <= totalDays; d++) {
+    const entry = { n: d, out: false, today: d === today };
+    if (scheduledDays.has(d)) entry.scheduled = colors[ci++ % colors.length];
+    days.push(entry);
   }
-  for (let i = 1; i <= 3; i++) days.push({ n: i, out: true });
+
+  // Next month fill
+  const rem = 7 - (days.length % 7);
+  if (rem < 7) for (let i = 1; i <= rem; i++) days.push({ n: i, out: true });
   return days;
 })();
 
 // ── Automations ───────────────────────────────────────────────────────────────
 export const automations = [
+  {
+    id: 'a0',
+    name: 'Smart Engage — HR Directors LATAM',
+    type: 'smart_engage',
+    status: 'active',
+    trigger: 'cron_5min',
+    triggerLabel: 'Cada 5 min · Busca + actúa automáticamente',
+    target: { titles: ['HR Director', 'People Manager', 'CHRO'], keywords: ['bienestar', 'wellness', 'RRHH', 'salud laboral'], industries: ['Healthcare', 'Corporate'], countries: ['Argentina', 'Chile', 'México'], minScore: 40, actions: { like: true, comment: true, connect: true, message: false } },
+    content: {},
+    schedule: { dailyLimit: 20, hours: '09:00-18:00', days: ['Mon','Tue','Wed','Thu','Fri'] },
+    stats: { actionsToday: 14, total: 456, successRate: 92 },
+    lastRun: 'Hace 5 min',
+  },
   {
     id: 'a1',
     name: 'Bienvenida a nuevas conexiones HR',
@@ -271,10 +301,10 @@ export const automations = [
 ];
 
 export const automationStats = {
-  active: 4,
-  actionsToday: 63,
+  active: 5,
+  actionsToday: 77,
   messagesSent: 11,
-  successRate: 96,
+  successRate: 95,
 };
 
 export const automationLog = [

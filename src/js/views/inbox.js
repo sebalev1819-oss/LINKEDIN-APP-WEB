@@ -1,5 +1,5 @@
 import * as api from '../services/api.js';
-import { toast } from '../ui.js';
+import { toast, escapeHtml } from '../ui.js';
 
 let state = { filter: 'all', activeThreadId: null, threads: [], templates: [] };
 
@@ -9,10 +9,10 @@ function threadItem(t) {
       <div class="thread-avatar" style="${avatarGradient(t.initials)}">${t.initials}</div>
       <div class="thread-body">
         <div class="thread-head">
-          <div class="thread-name">${t.name}</div>
+          <div class="thread-name">${escapeHtml(t.name)}</div>
           <div class="thread-time">${t.time}</div>
         </div>
-        <div class="thread-preview">${t.preview}</div>
+        <div class="thread-preview">${escapeHtml(t.preview)}</div>
       </div>
       ${t.unread ? '<span class="thread-unread-dot"></span>' : ''}
     </button>
