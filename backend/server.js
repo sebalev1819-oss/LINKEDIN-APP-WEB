@@ -56,6 +56,7 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);                          // file://, curl, Postman
     if (origin.endsWith('.netlify.app')) return callback(null, true);  // cualquier deploy Netlify
+    if (origin.endsWith('.trycloudflare.com')) return callback(null, true); // tuneles cloudflared
     if (allowedOrigins.includes(origin)) return callback(null, true);
     console.warn(`[CORS] Origen no permitido: ${origin}`);
     callback(new Error(`CORS: origen no permitido: ${origin}`));
