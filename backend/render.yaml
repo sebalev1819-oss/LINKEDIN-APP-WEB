@@ -17,6 +17,4 @@ services:
       - key: HEADLESS
         value: "true"
       - key: FRONTEND_URL
-        generateValue: false
-        # Completar con la URL de Netlify después del deploy
-        value: https://tu-app.netlify.app
+        value: https://linkedin-manager-selmi.netlify.app
