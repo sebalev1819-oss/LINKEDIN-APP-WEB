@@ -218,7 +218,13 @@ Podés usar saltos de línea y emojis 🚀
 </div>
 
 <script>
-const API = 'http://localhost:8000/api';
+const API = (() => {
+  const override = localStorage.getItem('apiBase');
+  if (override) return override.replace(/\/$/, '');
+  const h = location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:8000/api';
+  return 'https://linkedin-manager-api.onrender.com/api';
+})();
 let accounts = [];
 
 // ── Status check ─────────────────────────────────────────────────────────────

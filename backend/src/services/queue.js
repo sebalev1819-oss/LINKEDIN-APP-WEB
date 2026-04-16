@@ -155,19 +155,22 @@ async function checkScheduledPosts() {
 // ── Automation runner ─────────────────────────────────────────────────────────
 /** Run active automations that have capacity. Called every 5 min by cron. */
 async function runAutomations() {
-  // Get all active automations, joined with a random active account
-  const automations = db.prepare(`
-    SELECT a.*, acc.id as acc_id, acc.cookie as acc_cookie
-    FROM automations a
-    JOIN accounts acc ON acc.status = 'active'
-    WHERE a.status = 'active'
-    LIMIT 10
-  `).all();
-
-  if (!automations.length) {
-    console.log('[Automations] No active automations or no connected accounts');
+  // Grab the first active account. If there are multiple, we pick one per cycle
+  // to avoid multiplying every automation by N accounts (which caused each rule
+  // to run twice when the user had 2 cuentas activas).
+  const account = db.prepare("SELECT id as acc_id, cookie as acc_cookie FROM accounts WHERE status = 'active' ORDER BY updated_at DESC LIMIT 1").get();
+  if (!account) {
+    console.log('[Automations] No connected accounts (ninguna cuenta activa)');
     return;
   }
+
+  const rules = db.prepare("SELECT * FROM automations WHERE status = 'active' LIMIT 10").all();
+  if (!rules.length) {
+    console.log('[Automations] No active automations');
+    return;
+  }
+
+  const automations = rules.map(r => ({ ...r, acc_id: account.acc_id, acc_cookie: account.acc_cookie }));
 
   for (const auto of automations) {
     let schedule, target, content;

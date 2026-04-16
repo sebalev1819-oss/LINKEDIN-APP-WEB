@@ -1241,16 +1241,38 @@ async function publishPostNow() {
   if (!text || text.length < 10) { msg.style.color='var(--neon-red)'; msg.textContent='El post necesita al menos 10 caracteres'; return; }
   if (text.length > 3000) { msg.style.color='var(--neon-red)'; msg.textContent='Máx 3000 caracteres'; return; }
 
-  // Scheduled mode — save locally
+  // Scheduled mode — save in backend so the cron picks it up
   if (_schedEnabled) {
     const date = document.getElementById('post-date')?.value;
     const time = document.getElementById('post-time')?.value;
-    const label = new Date(date + 'T' + time).toLocaleString('es-AR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    DATA.scheduledPosts.unshift({ id:'p-'+Date.now(), date:'📅 ' + label, type:'Programado', text, scheduled:true });
-    document.getElementById('postModal').style.display = 'none';
-    document.getElementById('post-content-txt').value = '';
-    toast('Post programado para ' + label, 'success', 5000);
-    loadContentPosts();
+    if (!date || !time) { msg.style.color='var(--neon-red)'; msg.textContent='Elegí fecha y hora para programar'; return; }
+    const scheduledAt = new Date(date + 'T' + time).toISOString();
+    if (isNaN(new Date(scheduledAt).getTime())) { msg.style.color='var(--neon-red)'; msg.textContent='Fecha/hora inválida'; return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Guardando programación...';
+    msg.textContent = '';
+    try {
+      const r = await fetch(LI_API + '/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId, text, scheduledAt, type: 'Programado' })
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) throw new Error(d.error || 'Error guardando el post');
+      const label = new Date(scheduledAt).toLocaleString('es-AR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      DATA.scheduledPosts.unshift({ id: d.id || ('p-'+Date.now()), date:'📅 ' + label, type:'Programado', text, scheduled:true });
+      document.getElementById('postModal').style.display = 'none';
+      document.getElementById('post-content-txt').value = '';
+      toast('Post programado para ' + label + ' (el backend lo publicará)', 'success', 5000);
+      loadContentPosts();
+    } catch(err) {
+      msg.style.color = 'var(--neon-red)';
+      msg.textContent = '❌ ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 Publicar ahora en LinkedIn';
+    }
     return;
   }
 
@@ -1358,7 +1380,13 @@ function renderSkills(container) {
 // ============================================
 // CONNECTORS VIEW
 // ============================================
-const LI_API = 'http://localhost:8000/api';
+const LI_API = (() => {
+  const override = localStorage.getItem('apiBase');
+  if (override) return override.replace(/\/$/, '');
+  const h = location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:8000/api';
+  return 'https://linkedin-manager-api.onrender.com/api';
+})();
 function renderConnectors(container) {
   container.innerHTML = `<div class="view">
     <div class="view-header">

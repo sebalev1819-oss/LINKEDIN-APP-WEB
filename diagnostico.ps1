@@ -4,7 +4,7 @@ Write-Host "  LinkedIn Manager - Diagnóstico" -ForegroundColor Cyan
 Write-Host "======================================" -ForegroundColor Cyan
 Write-Host ""
 
-$backendPath = "C:\Users\slevin\projects\linkedin-manager\backend"
+$backendPath = "C:\Users\slevin\LINKEDIN-APP-WEB\backend"
 
 # 1. Node.js
 Write-Host "[1] Verificando Node.js..." -ForegroundColor Yellow
@@ -68,7 +68,7 @@ Write-Host "    Si hay error, se mostrará aquí:" -ForegroundColor Gray
 Write-Host ""
 
 $job = Start-Job -ScriptBlock {
-    Set-Location "C:\Users\slevin\projects\linkedin-manager\backend"
+    Set-Location "C:\Users\slevin\LINKEDIN-APP-WEB\backend"
     node server.js 2>&1
 }
 

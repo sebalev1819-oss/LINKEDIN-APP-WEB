@@ -15,7 +15,13 @@
 
 import * as mock from '../../data/mock.js';
 
-export const API_BASE = 'http://localhost:8000/api';
+export const API_BASE = (() => {
+  const override = localStorage.getItem('apiBase');
+  if (override) return override.replace(/\/$/, '');
+  const h = location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') return 'http://localhost:8000/api';
+  return 'https://linkedin-manager-api.onrender.com/api';
+})();
 
 /** Whether the API layer is currently using mock data. null = not determined yet. */
 export function isUsingMock() { return _useMock; }

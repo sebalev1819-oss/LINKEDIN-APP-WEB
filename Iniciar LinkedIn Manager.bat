@@ -3,7 +3,7 @@ title LinkedIn Manager
 color 0A
 setlocal
 
-set "BACKEND=C:\Users\slevin\projects\linkedin-manager\backend"
+set "BACKEND=C:\Users\slevin\LINKEDIN-APP-WEB\backend"
 
 echo.
 echo  ==========================================
